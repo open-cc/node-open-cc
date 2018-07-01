@@ -18,4 +18,7 @@ describe('container', () => {
         expect(fakeConnect.mock.calls[0][1].auth.username).toBe('someUser');
         expect(fakeConnect.mock.calls[0][1].auth.password).toBe('somePassword');
     });
+    it('exports a function by default', () => {
+        expect(typeof container).toBe('function');
+    });
 });

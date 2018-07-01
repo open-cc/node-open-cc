@@ -1,6 +1,6 @@
 {
   "name": "@open-cc/asterisk-ari-helpers",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Provides helper functions to be used with [ari-client](https://www.npmjs.com/package/ari-client)",
   "main": "src/index.js",
   "scripts": {

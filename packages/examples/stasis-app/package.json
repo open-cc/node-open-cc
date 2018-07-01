@@ -1,0 +1,11 @@
+{
+  "name": "@open-cc/example-stasis-app",
+  "private": true,
+  "version": "0.0.0",
+  "description": "An example statis app using node-open-cc packages",
+  "main": "index.js",
+  "dependencies": {
+    "@open-cc/asterisk-ari-helpers": "^0.0.0",
+    "@open-cc/asterisk-stasis-container": "^0.0.0"
+  }
+}

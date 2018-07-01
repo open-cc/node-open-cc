@@ -17,7 +17,7 @@ stasis('http://asterisk-host:8888/', {
     auth: { username: 'yourARIUser', password: 'yourARIUserPassword' }
 }).then(ari => {
   ari.start('your-stasis-app', (event, channel) => {
-    helpers(ari
+    ...
   });
 });
 ```

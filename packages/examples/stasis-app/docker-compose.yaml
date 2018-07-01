@@ -1,0 +1,19 @@
+version: '3'
+services:
+  asterisk:
+    image: dougbtv/asterisk14
+    volumes:
+      - "./etc/asterisk:/etc/asterisk"
+    ports:
+      - "5060:5060/udp"
+      - "10000-10002:10000-10002/udp"
+  stasis_app:
+    image: node-open-cc-packages:latest
+    build:
+      context: ../../../
+      dockerfile: ./packages/examples/Dockerfile
+    command: ["node", "./packages/examples/stasis-app/index.js"]
+    environment:
+      - ASTERISK_URL=http://asterisk:8088
+      - ASTERISK_CREDS=ariUser:ariPassword
+      - DEBUG=asterisk*

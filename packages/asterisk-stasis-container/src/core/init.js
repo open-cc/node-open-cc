@@ -9,7 +9,7 @@ exports.connect = (ariClient, superagent) => (asteriskURL, config) => {
             debug(`Attempting to connect to ${asteriskURL} [${attempt} of ${config.maxConnectAttempts}]`);
             attempt = typeof attempt === 'undefined' ? 0 : attempt;
             superagent
-                .get(`${asteriskURL}/ari/api-docs/resources.json`)
+                .get(`${asteriskURL}/ari/asterisk/info`)
                 .auth(config.auth.username, config.auth.password)
                 .then(() => {
                     ariClient.connect(
@@ -19,6 +19,7 @@ exports.connect = (ariClient, superagent) => (asteriskURL, config) => {
                             if (err) {
                                 reject(err);
                             } else {
+                                debug(`Connected to ${asteriskURL}`);
                                 resolve(ari);
                             }
                         });
