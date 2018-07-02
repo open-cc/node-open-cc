@@ -12,7 +12,9 @@ services:
     build:
       context: ../../../
       dockerfile: ./packages/examples/Dockerfile
-    command: ["node", "./packages/examples/stasis-app/index.js"]
+    volumes:
+      - "./:/opt/app/packages/examples/stasis-app/host"
+    command: ["node", "./packages/examples/stasis-app/host/index.js"]
     environment:
       - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword

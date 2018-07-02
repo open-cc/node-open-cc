@@ -6,8 +6,8 @@ exports.connect = (ariClient, superagent) => (asteriskURL, config) => {
     config.connectAttemptInterval = config.connectAttemptInterval || 1000;
     return new Promise((resolve, reject) => {
         const init = (attempt) => {
-            debug(`Attempting to connect to ${asteriskURL} [${attempt} of ${config.maxConnectAttempts}]`);
             attempt = typeof attempt === 'undefined' ? 0 : attempt;
+            debug(`Attempting to connect to ${asteriskURL} [${attempt} of ${config.maxConnectAttempts}]`);
             superagent
                 .get(`${asteriskURL}/ari/asterisk/info`)
                 .auth(config.auth.username, config.auth.password)

@@ -4,8 +4,8 @@ This repo contains npm packages which support integrations with VoIP components 
 
 ## Packages
 
-* [`@open-cc/asterisk-ari-helpers`](packages/asterisk-ari-helpers/README.md)
-* [`@open-cc/asterisk-stasis-container`](packages/asterisk-stasis-container/README.md)
+* [`@open-cc/asterisk-ari-helpers`](packages/integration/asterisk-ari-helpers/README.md)
+* [`@open-cc/asterisk-stasis-container`](packages/integration/asterisk-stasis-container/README.md)
 
 ## License
 

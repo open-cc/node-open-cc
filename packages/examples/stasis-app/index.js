@@ -9,6 +9,7 @@ stasis(asteriskURL, {
         password: asteriskCredentials.split(/:/)[1]
     }
 }).then(ari => {
+
     return ari.start('example-stasis-app', (event, channel) => {
         console.log('app started', event, channel);
 

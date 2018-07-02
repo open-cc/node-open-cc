@@ -1,0 +1,35 @@
+{
+  "name": "@open-cc/interaction-api",
+  "version": "0.0.0",
+  "description": "interaction API",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "prepublishOnly": "npm run test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/open-cc/node-open-cc.git"
+  },
+  "keywords": [
+    "asterisk",
+    "stasis",
+    "nodejs"
+  ],
+  "author": "John Collier <john.collier4@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/open-cc/node-open-cc/issues"
+  },
+  "homepage": "https://github.com/open-cc/node-open-cc#readme",
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "ddd-es-node": "^0.0.21"
+  },
+  "devDependencies": {
+    "jest": "^23.2.0"
+  }
+}
