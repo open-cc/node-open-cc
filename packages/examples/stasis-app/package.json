@@ -1,5 +1,5 @@
 {
-  "name": "@open-cc/example-stasis-app",
+  "name": "@open-cc-examples/stasis-app",
   "private": true,
   "version": "0.0.0",
   "description": "An example statis app using node-open-cc packages",

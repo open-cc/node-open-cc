@@ -1,4 +1,4 @@
-# stasis-app
+# @open-cc/asterisk-stasis-container stasis-app
 
 This example configures an [Asterisk](https://wiki.asterisk.org/wiki/display/AST/Home) stasis app using [@open-cc/asterisk-stasis-container](../../asterisk-stasis-container/README.md).
 
@@ -10,7 +10,7 @@ Start the Asterisk an stasis apps using docker-compose:
 docker-compose up
 ```
 
-Connect to the asterisk instance using a SIP based device. You can use [pjsua](http://www.pjsip.org/pjsua.htm) is a convenient CLI based device:
+Register to the asterisk instance using a SIP based device. This example is using [pjsua](http://www.pjsip.org/pjsua.htm):
 
 ```shell
 pjsua \

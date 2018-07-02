@@ -1,6 +1,6 @@
 # open-cc
 
-This repo contains npm packages which support integrations with open source VoIP software components and platforms.
+This repo contains npm packages which support integrations with VoIP components and platforms.
 
 ## Packages
 
