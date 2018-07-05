@@ -16,6 +16,7 @@ global.withEventStore = callback => {
         }
     };
     const eventDispatcher = jest.fn((streamId, events) => {
+        eventDispatcher.events = (eventDispatcher.events || []).concat(events);
         events.forEach((event) => {
             event.streamId = streamId;
             eventBus.emit(event);
@@ -41,19 +42,19 @@ global.withEventStore = callback => {
                 allEvents = allEvents.concat(args[1]);
             });
             const found = allEvents.filter(actualEvent => {
-                return Object.keys(expectedEvent).reduce((match, key) => {
-                    return actualEvent[key] === expectedEvent[key] && match;
-                }, true);
-            }).length > 0;
+                    return Object.keys(expectedEvent).reduce((match, key) => {
+                        return actualEvent[key] === expectedEvent[key] && match;
+                    }, true);
+                }).length > 0;
             if (found) {
                 return {
                     message: () =>
-                        `expected no event to have been dispatched like ${JSON.stringify(expectedEvent)}`,
+                        `expected no event to have been dispatched like ${JSON.stringify(expectedEvent)} but received ${JSON.stringify(allEvents)}`,
                     pass: true
                 };
             } else {
                 return {
-                    message: () => `expected an event to have been dispatched like ${JSON.stringify(expectedEvent)}`,
+                    message: () => `expected an event to have been dispatched like ${JSON.stringify(expectedEvent)} but received ${JSON.stringify(allEvents)}`,
                     pass: false
                 };
             }
@@ -65,5 +66,26 @@ global.withEventStore = callback => {
         entityRepository,
         eventDispatcher,
         eventStore
+    });
+};
+
+global.mockAPI = (api, callback) => {
+    const handlers = {};
+    const router = {
+        register: (stream, handler) => {
+            handlers[stream] = handler;
+        },
+        broadcast: () => {}
+    };
+    return withEventStore(es => {
+        api(router, es);
+        return callback({
+            send: (stream, message) => {
+                const res = handlers[stream](message);
+                return new Promise(resolve => {
+                    setTimeout(() => resolve(res), 200);
+                });
+            }
+        }, es);
     });
 };

@@ -1,7 +1,7 @@
 module.exports = {
   verbose: true,
   testEnvironment: 'node',
-  setupFiles: ['<rootDir>/jestSetup.js'],
+  setupFiles: ['<rootDir>/../api-container/jestSetup.js'],
   moduleFileExtensions: [
     'js',
     'node'

@@ -1,6 +1,6 @@
 # @open-cc/interaction-api
 
-An API which models interactions for communications platforms.
+A micro-service which models interactions for a communications platform.
 
 ## Installation
 

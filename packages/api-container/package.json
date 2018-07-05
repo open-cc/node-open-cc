@@ -1,12 +1,10 @@
 {
-  "name": "@open-cc/interaction-api",
+  "name": "@open-cc/api-container",
   "version": "0.0.0",
-  "description": "interaction API",
+  "description": "api base",
   "main": "src/index.js",
-  "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "prepublishOnly": "npm run test"
+  "bin": {
+    "open-cc-api-container": "src/index.js"
   },
   "repository": {
     "type": "git",
@@ -26,10 +24,11 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "ddd-es-node": "^0.0.21"
-  },
   "devDependencies": {
     "jest": "^23.2.0"
+  },
+  "dependencies": {
+    "ddd-es-node": "^0.0.21",
+    "meshage": "^0.1.10"
   }
 }
