@@ -15,8 +15,7 @@ module.exports = router => {
         const helpers = ariHelpers(ari);
 
         ari.start('example-stasis-app', (event, channel) => {
-
-            channel.once('StasisEnd', (event, obj) => {
+            channel.once('StasisEnd', () => {
                 router.send({
                     stream: 'interactions',
                     partitionKey: channel.id,
@@ -33,49 +32,28 @@ module.exports = router => {
                 fromPhoneNumber: channel.caller.number,
                 toPhoneNumber: channel.connected.number
             });
-
         });
 
         router.register('events', message => {
-
             switch (message.event.name) {
-                case 'CallInitiatedEvent':
+                case 'RoutingCompleteEvent':
                 {
                     ari.channels
                         .get({channelId: message.partitionKey})
                         .then(channel => {
-
-                            /*-
-                            const playback = ari.Playback();
-                            channel.play({media: 'sound:beep'},
-                                playback, err => {
-                                    if (err) {
-                                        throw err;
-                                    }
-                                });
-                            playback.once('PlaybackFinished', () => {
-                                channel.hangup(err => {
-                                    if (err) {
-                                        console.error(err.message);
-                                    }
-                                });
-                            });*/
-
                             helpers.originate(
-                                'SIP/1002',
+                                message.event.endpoint,
                                 channel, {
                                     onAnswer() {
-                                        console.log('answered');
                                         router.send({
                                             stream: 'interactions',
                                             partitionKey: channel.id,
                                             name: 'answered',
                                             interactionId: channel.id,
-                                            endpoint: 'SIP/1002'
+                                            endpoint: message.event.endpoint
                                         });
                                     }
                                 });
-
                         })
                         .catch(err => {
                             console.error(err);
@@ -83,9 +61,7 @@ module.exports = router => {
                     break;
                 }
             }
-
         });
-
     }).catch(err => {
         console.error(err);
     });

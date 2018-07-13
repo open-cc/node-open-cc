@@ -9,17 +9,16 @@ meshage
     .init(new meshage.GrapevineCluster(clusterPort, seeds), apiPort)
     .start((err, router) => {
 
+        services.forEach(service => {
+            require(service)(router, es);
+        });
+
         es.eventBus.subscribe(event => {
-            console.log(event);
             router.broadcast({
                 stream: 'events',
                 partitionKey: event.streamId,
                 event: event
             });
-        });
-
-        services.forEach(service => {
-            require(service)(router, es);
         });
 
     });

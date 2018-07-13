@@ -29,3 +29,11 @@ services:
       - SEEDS=stasis_app:9742
     volumes:
       - "./../../packages/interaction-api:/opt/app/packages/interaction-api/host"
+  routing_api:
+    image: node-open-cc-packages:latest
+    command: ["node", "./packages/api-container/src/index.js"]
+    environment:
+      - SERVICES=/opt/app/packages/routing-api/host
+      - SEEDS=stasis_app:9742
+    volumes:
+      - "./../../packages/routing-api:/opt/app/packages/routing-api/host"

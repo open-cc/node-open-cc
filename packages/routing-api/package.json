@@ -1,7 +1,7 @@
 {
-  "name": "@open-cc/interaction-api",
+  "name": "@open-cc/routing-api",
   "version": "0.0.0",
-  "description": "interaction api",
+  "description": "routing api",
   "main": "src/index.js",
   "scripts": {
     "test": "jest",
