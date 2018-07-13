@@ -28,7 +28,7 @@
     "jest": "^23.2.0"
   },
   "dependencies": {
-    "ddd-es-node": "^0.0.21",
-    "meshage": "^0.1.10"
+    "ddd-es-node": "^0.0.22",
+    "meshage": "^0.1.11"
   }
 }

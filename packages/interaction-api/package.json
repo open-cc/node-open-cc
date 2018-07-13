@@ -27,7 +27,6 @@
     "access": "public"
   },
   "dependencies": {
-    "ddd-es-node": "^0.0.21",
     "debug": "^3.1.0"
   },
   "devDependencies": {

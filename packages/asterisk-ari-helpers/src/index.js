@@ -6,6 +6,8 @@ module.exports = (ari, context) => {
     return {
         originate: (endpointToDial, channel, opts) => {
 
+            ari.start('bridge-dial', () => {});
+
             opts = opts || {};
 
             const dialed = ari.Channel();
@@ -96,6 +98,8 @@ const genericErrorHandler = (withHandler, success) => {
         if(err) {
             throw err;
         }
-        success.apply(null, arguments);
+        if (success) {
+            success.apply(null, arguments);
+        }
     });
 };

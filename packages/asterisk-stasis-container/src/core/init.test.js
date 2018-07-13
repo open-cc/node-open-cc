@@ -61,11 +61,15 @@ describe('init', () => {
                 on: jest.fn(),
                 start: jest.fn()
             };
+            const appHandler = jest.fn();
             return init.initializeStarter(Promise.resolve(ariClient))
-                .then(ari => ari.start('foo', 'stasis-start-callback'))
+                .then(ari => ari.start('foo', appHandler))
                 .then(() => {
-                    expect(ariClient.on).toHaveBeenCalledWith('StasisStart', 'stasis-start-callback');
                     expect(ariClient.__start).toHaveBeenCalledWith('foo');
+                    ariClient.on.mock.calls[0][1]({
+                        application: 'foo'
+                    }, 'aChannel');
+                    expect(appHandler).toHaveBeenCalled();
                 });
         });
     });

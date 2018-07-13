@@ -38,12 +38,20 @@ exports.connect = (ariClient, superagent) => (asteriskURL, config) => {
     });
 };
 
+const stasisHandlers = {};
+
 exports.initializeStarter = (connection) => {
     return connection
         .then(ari => {
+            ari.on('StasisStart', (event, channel) => {
+                const handler = stasisHandlers[event.application];
+                if (handler) {
+                    handler(event, channel);
+                }
+            });
             ari.__start = ari.start;
             ari.start = (appName, handler) => {
-                ari.on('StasisStart', handler);
+                stasisHandlers[appName] = handler;
                 ari.__start.bind(ari)(appName);
                 return Promise.resolve(ari);
             };

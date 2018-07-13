@@ -27,18 +27,30 @@ module.exports = (router, es) => {
             }
             case 'ended':
             {
-                const channel = projections.findInteraction(message.interactionId).channel;
-                interactionServices[channel]
-                    .endInteraction(message.interactionId);
+                const interactionModel = projections.findInteraction(message.interactionId);
+                if (interactionModel) {
+                    const channel = interactionModel.channel;
+                    interactionServices[channel]
+                        .endInteraction(message.interactionId);
+                } else {
+                    console.log(`interaction ${message.interactionId} not found`);
+                }
                 break;
             }
-            case 'get':
+            case 'answered':
             {
-                return projections.listInteractions(message.channel);
+                const interactionModel = projections.findInteraction(message.interactionId);
+                if (interactionModel) {
+                    const channel = interactionModel.channel;
+                    interactionServices[channel].answer(message.interactionId, message.endpoint);
+                } else {
+                    console.log(`interaction ${message.interactionId} not found`);
+                }
+                break;
             }
             default:
             {
-                return {message: 'unknown command'};
+                return {message: 'unknown command' + message.name};
             }
         }
     });
