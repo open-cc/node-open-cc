@@ -16,20 +16,13 @@ module.exports = router => {
 
         ari.start('example-stasis-app', (event, channel) => {
 
-            console.log('args', event.args);
-            if (event.args[0] === 'dialed') {
-                return;
-            }
-
             channel.once('StasisEnd', (event, obj) => {
-                console.log(event, obj);
-                /*-
                 router.send({
                     stream: 'interactions',
                     partitionKey: channel.id,
                     interactionId: channel.id,
                     name: 'ended'
-                });*/
+                });
             });
             router.send({
                 stream: 'interactions',
@@ -40,6 +33,7 @@ module.exports = router => {
                 fromPhoneNumber: channel.caller.number,
                 toPhoneNumber: channel.connected.number
             });
+
         });
 
         router.register('events', message => {
@@ -50,6 +44,7 @@ module.exports = router => {
                     ari.channels
                         .get({channelId: message.partitionKey})
                         .then(channel => {
+
                             /*-
                             const playback = ari.Playback();
                             channel.play({media: 'sound:beep'},
@@ -68,14 +63,17 @@ module.exports = router => {
 
                             helpers.originate(
                                 'SIP/1002',
-                                channel, () => {
-                                    router.send({
-                                        stream: 'interactions',
-                                        partitionKey: channel.id,
-                                        name: 'answered',
-                                        interactionId: channel.id,
-                                        endpoint: 'SIP/1002'
-                                    });
+                                channel, {
+                                    onAnswer() {
+                                        console.log('answered');
+                                        router.send({
+                                            stream: 'interactions',
+                                            partitionKey: channel.id,
+                                            name: 'answered',
+                                            interactionId: channel.id,
+                                            endpoint: 'SIP/1002'
+                                        });
+                                    }
                                 });
 
                         })
