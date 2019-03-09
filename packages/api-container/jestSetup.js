@@ -16,6 +16,7 @@ global.withEventStore = callback => {
         }
     };
     const eventDispatcher = jest.fn((streamId, events) => {
+        events = Array.isArray(events) ? events : [events];
         eventDispatcher.events = (eventDispatcher.events || []).concat(events);
         events.forEach((event) => {
             event.streamId = streamId;
@@ -24,15 +25,11 @@ global.withEventStore = callback => {
         return Promise.resolve(events);
     });
     const eventStore = {
-        replay(id, handler, done) {
-            if (done) {
-                done();
-            }
+        replay(id, handler) {
+          return Promise.resolve();
         },
-        replayAll(handler, done) {
-            if (done) {
-                done();
-            }
+        replayAll(handler) {
+          return Promise.resolve();
         }
     };
     expect.extend({
@@ -78,7 +75,12 @@ global.mockAPI = (api, callback) => {
         broadcast: () => {}
     };
     return withEventStore(es => {
-        api(router, es);
+        api({
+          router,
+          eventBus: es.eventBus,
+          entityRepository: es.entityRepository,
+          log: jest.fn()
+        });
         return callback({
             send: (stream, message) => {
                 const res = handlers[stream](message);

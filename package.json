@@ -1,10 +1,22 @@
 {
   "license": "MIT",
   "scripts": {
-    "bootstrap": "lerna bootstrap --hoist",
+    "lerna:bootstrap": "lerna bootstrap --hoist",
+    "lerna:clean": "lerna clean --yes",
+    "build": "lerna run build --stream",
     "test": "lerna run test --stream"
   },
   "devDependencies": {
-    "lerna": "^2.9.0"
+    "babel-core": "6.26.3",
+    "babel-preset-env": "1.7.0",
+    "@types/debug": "4.1.2",
+    "@types/jest": "^24.0.9",
+    "@types/node": "^8.0.17",
+    "babel-jest": "^20.0.3",
+    "jest": "23.6.0",
+    "lerna": "^2.9.0",
+    "ts-jest": "^23.10.5",
+    "tsutils": "~2.7.1",
+    "typescript": "3.3.3"
   }
 }

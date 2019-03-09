@@ -27,9 +27,6 @@
   "publishConfig": {
     "access": "public"
   },
-  "devDependencies": {
-    "jest": "^23.2.0"
-  },
   "dependencies": {
     "debug": "^3.1.0"
   }

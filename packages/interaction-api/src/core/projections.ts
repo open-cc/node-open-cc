@@ -1,23 +1,32 @@
-const interactions = require('./interaction');
-const calls = require('./call');
+import {
+    InteractionAnsweredEvent,
+    InteractionEndedEvent,
+    InteractionInitiatedEvent
+} from './interaction';
+
+import {CallInitiatedEvent} from './call';
+import {
+    EntityEvent,
+    EventBus
+} from 'ddd-es-node';
 
 const interactionsView = {};
 
-exports.init = (eventBus) => {
-    eventBus.subscribe((event) => {
-        if (event instanceof interactions.InteractionInitiatedEvent) {
+export const init = (eventBus : EventBus) => {
+    eventBus.subscribe((event : EntityEvent) => {
+        if (event instanceof InteractionInitiatedEvent) {
             interactionsView[event.streamId] = interactionsView[event.streamId] || {id: event.streamId};
             interactionsView[event.streamId].channel = event.channel;
             interactionsView[event.streamId].startedOn = event.timestamp;
-            if (event instanceof calls.CallInitiatedEvent) {
+            if (event instanceof CallInitiatedEvent) {
                 interactionsView[event.streamId].fromPhoneNumber = event.fromPhoneNumber;
                 interactionsView[event.streamId].toPhoneNumber = event.toPhoneNumber;
             }
-        } else if (event instanceof interactions.InteractionAnsweredEvent) {
+        } else if (event instanceof InteractionAnsweredEvent) {
             if (interactionsView[event.streamId]) {
                 interactionsView[event.streamId].answeredOn = event.timestamp;
             }
-        } else if (event instanceof interactions.InteractionEndedEvent) {
+        } else if (event instanceof InteractionEndedEvent) {
             if (interactionsView[event.streamId]) {
                 interactionsView[event.streamId].endedOn = event.timestamp;
             }
@@ -25,11 +34,11 @@ exports.init = (eventBus) => {
     }, {replay: true});
 };
 
-exports.findInteraction = (interactionId) => {
+export const findInteraction = (interactionId : string) => {
     return interactionsView[interactionId];
 };
 
-exports.listInteractions = (channel) => {
+export const listInteractions = (channel? : string) => {
     return Object.keys(interactionsView)
         .map(interactionId => interactionsView[interactionId])
         .filter(interaction => {

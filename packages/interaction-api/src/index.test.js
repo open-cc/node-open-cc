@@ -1,5 +1,7 @@
+import api from './';
+
 describe('interaction api', () => {
-    mockAPI(require('./index'), (router, es) => {
+    mockAPI(api, (router, es) => {
         it('initiates calls', () => {
             return router.send('interactions', {
                 name: 'started',

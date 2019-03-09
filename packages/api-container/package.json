@@ -2,9 +2,9 @@
   "name": "@open-cc/api-container",
   "version": "0.0.0",
   "description": "api base",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "bin": {
-    "open-cc-api-container": "src/index.js"
+    "open-cc-api-container": "dist/src/index.js"
   },
   "repository": {
     "type": "git",
@@ -24,11 +24,12 @@
   "publishConfig": {
     "access": "public"
   },
-  "devDependencies": {
-    "jest": "^23.2.0"
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "ddd-es-node": "^0.0.22",
-    "meshage": "^0.1.11"
+    "ddd-es-node": "^0.0.25",
+    "debug": "4.1.1",
+    "meshage": "^0.2.4"
   }
 }
