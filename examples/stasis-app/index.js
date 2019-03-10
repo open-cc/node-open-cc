@@ -19,38 +19,44 @@ module.exports = router => {
                 router.send({
                     stream: 'interactions',
                     partitionKey: channel.id,
-                    interactionId: channel.id,
-                    name: 'ended'
+                    data: {
+                      interactionId: channel.id,
+                      name: 'ended'
+                    }
                 });
             });
             router.send({
                 stream: 'interactions',
                 partitionKey: channel.id,
-                name: 'started',
-                channel: 'voice',
-                interactionId: channel.id,
-                fromPhoneNumber: channel.caller.number,
-                toPhoneNumber: channel.connected.number
+                data: {
+                  name: 'started',
+                  channel: 'voice',
+                  interactionId: channel.id,
+                  fromPhoneNumber: channel.caller.number,
+                  toPhoneNumber: channel.connected.number
+                }
             });
         });
 
-        router.register('events', message => {
-            switch (message.event.name) {
+        router.register('events', (event) => {
+            switch (event.name) {
                 case 'RoutingCompleteEvent':
                 {
                     ari.channels
-                        .get({channelId: message.partitionKey})
+                        .get({channelId: event.streamId})
                         .then(channel => {
                             helpers.originate(
-                                message.event.endpoint,
+                                event.endpoint,
                                 channel, {
                                     onAnswer() {
                                         router.send({
                                             stream: 'interactions',
                                             partitionKey: channel.id,
-                                            name: 'answered',
-                                            interactionId: channel.id,
-                                            endpoint: message.event.endpoint
+                                            data: {
+                                              name: 'answered',
+                                              interactionId: channel.id,
+                                              endpoint: event.endpoint
+                                            }
                                         });
                                     }
                                 });

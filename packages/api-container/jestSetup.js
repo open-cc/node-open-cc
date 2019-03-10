@@ -83,7 +83,7 @@ global.mockAPI = (api, callback) => {
         });
         return callback({
             send: (stream, message) => {
-                const res = handlers[stream](message);
+                const res = handlers[stream](message.data, message);
                 return new Promise(resolve => {
                     setTimeout(() => resolve(res), 200);
                 });
