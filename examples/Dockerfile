@@ -1,7 +1,7 @@
 FROM node:latest
 WORKDIR /opt/app
-ADD . /opt/app
-RUN npm install --unsafe-perm
-RUN npm run -s lerna:bootstrap
-ENV SERVICES="/opt/service"
+COPY . /opt/app
+RUN npm install --unsafe-perm && \
+    npm run lerna:bootstrap && \
+    npm run build
 CMD ["node", "./packages/api-container/dist/src/index.js"]

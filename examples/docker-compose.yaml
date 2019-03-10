@@ -3,31 +3,37 @@ services:
   asterisk:
     image: dougbtv/asterisk14
     volumes:
-      - "./etc/asterisk:/etc/asterisk"
+      - "./stasis-app/etc/asterisk:/etc/asterisk"
     ports:
       - "5060:5060/udp"
       - "10000-10101:10000-10101/udp"
   stasis_app:
     image: node-open-cc-packages:latest
     build:
-      context: ../../
+      context: ../
       dockerfile: examples/Dockerfile
     environment:
+      - SERVICES=/opt/service/examples/stasis-app
       - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword
+      - DEBUG=api-container:*
     volumes:
-      - "./:/opt/service"
+      - "../:/opt/service"
     ports:
       - "8080:8080"
   interaction_api:
     image: node-open-cc-packages:latest
     environment:
+      - SERVICES=/opt/service/packages/routing-api
       - SEEDS=stasis_app:9742
+      - DEBUG=api-container:*
     volumes:
-      - "../../packages/interaction-api:/opt/service"
+      - "../:/opt/service"
   routing_api:
     image: node-open-cc-packages:latest
     environment:
+      - SERVICES=/opt/service/packages/routing-api
       - SEEDS=stasis_app:9742
+      - DEBUG=api-container:*
     volumes:
-      - "../../packages/routing-api:/opt/service"
+      - "../:/opt/service"

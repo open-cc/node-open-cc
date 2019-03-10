@@ -22,12 +22,16 @@ import {
   memoryEventStore
 } from 'ddd-es-node/dist/src/runtime/in-memory';
 import {LocalEventBus} from 'ddd-es-node/dist/src/runtime/local-event-bus';
+import * as path from 'path';
 import * as debug from 'debug';
 
 const services : string[] = (process.env.SERVICES || '').split(/,/);
 const clusterPort : any = process.env.CLUSTER_PORT || 9742;
 const seeds : string[] = (process.env.SEEDS || '').split(/,/);
 const apiPort : any = process.env.API_PORT || 8080;
+
+const logName : string = 'api-container';
+const log : debug.Debugger = debug(logName);
 
 export interface Api {
   (deps : ApiDeps) : void;
@@ -45,13 +49,14 @@ init(new GrapevineCluster(clusterPort, seeds), apiPort)
   .start(
     (err : Error, router : ConnectedMessageRouter) => {
       services.forEach(service => {
+        log(`loading ${service}`);
         const api : Api = <Api>require(service);
         api({
           router,
           eventBus,
           eventStore,
           entityRepository,
-          log: debug(service)
+          log: debug(`${logName}:${path.basename(service)}`)
         });
       });
       eventBus.subscribe((event : EntityEvent) => {
