@@ -31,7 +31,7 @@ const seeds : string[] = (process.env.SEEDS || '').split(/,/);
 const apiPort : any = process.env.API_PORT || 8080;
 
 const logName : string = 'api-container';
-const log : debug.Debugger = debug(logName);
+const log : debug.Debugger = debug(`${logName}:container`);
 
 export interface Api {
   (deps : ApiDeps) : void;
@@ -48,9 +48,22 @@ export interface ApiDeps {
 init(new GrapevineCluster(clusterPort, seeds), apiPort)
   .start(
     (err : Error, router : ConnectedMessageRouter) => {
+      eventBus.subscribe((event : EntityEvent) => {
+        log('broadcasting', event);
+        router.broadcast({
+          stream: 'events',
+          partitionKey: event.streamId,
+          data: event
+        }).then(() => {
+          log('broadcasted event', event);
+        }).catch((err: Error) => {
+          log('failed to broadcast event', event, err);
+        });
+      });
       services.forEach(service => {
         log(`loading ${service}`);
-        const api : Api = <Api>require(service);
+        const required = require(service);
+        const api : Api = <Api>(typeof required === 'function' ? required : required.default);
         api({
           router,
           eventBus,
@@ -59,15 +72,7 @@ init(new GrapevineCluster(clusterPort, seeds), apiPort)
           log: debug(`${logName}:${path.basename(service)}`)
         });
       });
-      eventBus.subscribe((event : EntityEvent) => {
-        router.broadcast({
-          stream: 'events',
-          partitionKey: event.streamId,
-          data: event
-        }).then(() => {
-          // do nothing
-        });
-      });
+      log(`loaded ${services}`);
     });
 
 export const test = (api : Api) : ApiDeps => {

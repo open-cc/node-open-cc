@@ -7,7 +7,13 @@ const init = (coreInit, asteriskURL, config) => {
             coreInit
                 .connect(ari, superagent)(asteriskURL, config));
 };
-const def= (asteriskURL, config) => {
+/**
+ * Initializes an ari client.
+ * @param asteriskURL {string}
+ * @param config
+ * @returns {Promise<any>}
+ */
+const def = (asteriskURL, config) => {
     return init(coreInit, asteriskURL, config);
 };
 def.__init = init;
