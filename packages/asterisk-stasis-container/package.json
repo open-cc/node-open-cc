@@ -2,10 +2,11 @@
   "name": "@open-cc/asterisk-stasis-container",
   "version": "0.0.0",
   "description": "A container for asterisk stasis applications",
-  "main": "src/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch",
+    "test:watch": "jest --watch --coverage",
+    "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run test"
   },
   "repository": {
@@ -30,5 +31,8 @@
     "ari-client": "^1.2.0",
     "debug": "^3.1.0",
     "superagent": "^3.8.3"
+  },
+  "devDependencies": {
+    "@types/superagent" : "4.1.1"
   }
 }

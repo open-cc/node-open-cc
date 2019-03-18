@@ -13,7 +13,7 @@ services:
       context: ../
       dockerfile: examples/Dockerfile
     environment:
-      - SERVICES=/opt/app/examples/stasis-app/
+      - SERVICES=/opt/app/examples/stasis-app/dist/src/index.js
       - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword
       - DEBUG=api-container:*

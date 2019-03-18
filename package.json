@@ -1,7 +1,7 @@
 {
   "license": "MIT",
   "scripts": {
-    "lerna:bootstrap": "lerna bootstrap --hoist",
+    "lerna:bootstrap": "lerna bootstrap -a --hoist",
     "lerna:clean": "lerna clean --yes",
     "build": "lerna run build --stream",
     "test": "lerna run test --stream"

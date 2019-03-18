@@ -3,7 +3,10 @@
   "private": true,
   "version": "0.0.0",
   "description": "An example statis app using node-open-cc packages",
-  "main": "index.js",
+  "main": "dist/src/index.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
   "dependencies": {
     "@open-cc/asterisk-ari-helpers": "^0.0.0",
     "@open-cc/asterisk-stasis-container": "^0.0.0"
