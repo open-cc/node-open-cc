@@ -7,6 +7,7 @@ import {
 } from './interfaces';
 import * as ari from 'ari-client';
 import * as debug from 'debug';
+import fetch from 'node-fetch';
 
 const log : debug.Debugger = debug('asterisk-stasis-container');
 
@@ -36,11 +37,10 @@ export class ARIInitializer {
             }, config.connectAttemptInterval);
           }
         };
-
         this.fetchInstance(`${config.url}/ari/asterisk/info`, {
           method: 'GET',
           headers: {
-            'Authorization': `basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`
+            'Authorization': `Basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`
           }
         }).then(res => {
           if (res.ok) {

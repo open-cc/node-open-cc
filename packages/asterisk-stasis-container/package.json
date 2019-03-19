@@ -29,6 +29,10 @@
   },
   "dependencies": {
     "ari-client": "^1.2.0",
-    "debug": "^3.1.0"
+    "debug": "^3.1.0",
+    "node-fetch": "2.3.0"
+  },
+  "devDependencies": {
+    "@types/node-fetch": "2.1.6"
   }
 }
