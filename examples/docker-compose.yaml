@@ -1,4 +1,9 @@
 version: '3'
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 10.3.2.0/24
 services:
   asterisk:
     image: dougbtv/asterisk14
@@ -6,7 +11,11 @@ services:
       - "./stasis-app/etc/asterisk:/etc/asterisk"
     ports:
       - "5060:5060/udp"
-      - "10000-10101:10000-10101/udp"
+      - "5060:5060/tcp"
+      - "10000-10099:10000-10099/udp"
+    networks:
+      default:
+        ipv4_address: 10.3.2.10
   stasis_app:
     image: node-open-cc-packages:latest
     build:
@@ -16,7 +25,7 @@ services:
       - SERVICES=/opt/app/examples/stasis-app/dist/src/index.js
       - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword
-      - DEBUG=api-container:*
+      - DEBUG=api-container:*,-api-container:container
     volumes:
       - "../:/opt/dev"
     ports:
@@ -26,7 +35,7 @@ services:
     environment:
       - SERVICES=/opt/app/packages/interaction-api/dist/src/index.js
       - SEEDS=stasis_app:9742
-      - DEBUG=api-container:*
+      - DEBUG=api-container:*,-api-container:container
     volumes:
       - "../:/opt/dev"
   routing_api:
@@ -34,6 +43,6 @@ services:
     environment:
       - SERVICES=/opt/app/packages/routing-api/dist/src/index.js
       - SEEDS=stasis_app:9742
-      - DEBUG=api-container:*
+      - DEBUG=api-container:*,-api-container:container
     volumes:
       - "../:/opt/dev"

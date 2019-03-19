@@ -10,14 +10,19 @@ export interface StasisContainerConfig {
   log?: IDebugger;
 }
 
-export interface StasisAppRegistration {
-  (ari: ari.ARI): (event?: any, channel?: ari.Channel) => void;
+export interface StasisAppHandler {
+  (event?: any, channel?: ari.Channel): void;
 }
 
-export interface StasisConnected {
-  register(id: string, app: StasisAppRegistration)
+export interface StasisAppRegistration {
+  id: string,
+  handler: StasisAppHandler
+}
+
+export interface StasisConnectedHandler {
+  (ari: ari.ARI): StasisAppRegistration | StasisAppRegistration[];
 }
 
 export interface Stasis {
-  (config: StasisContainerConfig): StasisConnected;
+  (config: StasisContainerConfig, handler: StasisConnectedHandler): void;
 }

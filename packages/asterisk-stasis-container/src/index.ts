@@ -1,17 +1,18 @@
 import {
-  StasisContainerConfig,
+  Stasis,
   StasisAppRegistration,
-  StasisConnected,
-  Stasis
+  StasisConnectedHandler,
+  StasisContainerConfig
 } from './core/interfaces';
 
-import stasis from './core/init';
+import stasis, { stasisApp } from './core/init';
 
 export {
   StasisContainerConfig,
   StasisAppRegistration,
-  StasisConnected,
-  Stasis
+  StasisConnectedHandler,
+  Stasis,
+  stasisApp
 };
 
 export default stasis;

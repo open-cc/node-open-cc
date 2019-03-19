@@ -12,6 +12,7 @@ module.exports = {
     'node'
   ],
   testRegex: '.*\\.test\\.(js|ts)$',
+  testPathIgnorePatterns: ['/dist/', '/node_modules/'],
   coverageDirectory: 'coverage',
   collectCoverageFrom: [
     'src/**/*.js'

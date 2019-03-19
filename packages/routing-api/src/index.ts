@@ -2,8 +2,6 @@ import {EntityEvent} from 'ddd-es-node';
 
 export default ({router, log}) => {
   router.register('events', (message : EntityEvent) => {
-    log('Got message on events stream');
-    log('Received message', JSON.stringify(message, null, 2));
     switch (message.name) {
       case 'CallInitiatedEvent': {
         log(`Routing interaction ${message.streamId}`, message);

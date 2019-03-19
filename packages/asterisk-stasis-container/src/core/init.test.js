@@ -1,18 +1,14 @@
-const init = require('./init.ts');
+import { ARIInitializer, stasisApp } from './init';
 
-describe('init', () => {
+describe('stasis', () => {
   describe('connecting', () => {
     let ariInstance;
     let ariClient;
-    let superagent;
-    let healthCheckResponse = () => Promise.resolve();
+    let fetchInstance;
+    let healthCheckResponse = () => Promise.resolve({ ok: true });
     let ariClientConnectResponse = (handler) => handler(null, ariInstance);
     beforeEach(() => {
-      superagent = {
-        get: jest.fn(() => ({
-          auth: jest.fn(() => healthCheckResponse())
-        }))
-      };
+      fetchInstance = jest.fn(() => healthCheckResponse());
       ariInstance = {
         start: jest.fn(),
         on: jest.fn((event, handler) => {
@@ -25,17 +21,18 @@ describe('init', () => {
     });
     it('connects to ARI', () => {
       return new Promise((resolve) => {
-        new init.ARIInitializer(ariClient, superagent)
+        new ARIInitializer(ariClient, fetchInstance)
           .connect({
             url: 'http://asterisk:8080'
-          })
-          .register('some-app', (ari) => (event) => {
-            resolve({ari, event});
+          }, (ari) => {
+            expect(ari).toBeDefined();
+            return stasisApp('some-app', (event) => {
+              expect(event).toBeDefined();
+              resolve(ari);
+            });
           });
-      }).then((res) => {
-        expect(res.ari).toBeDefined();
-        expect(res.event).toBeDefined();
-        expect(res.ari.start).toHaveBeenCalledWith('some-app');
+      }).then((ari) => {
+        expect(ari.start).toHaveBeenCalledWith('some-app');
       });
     });
   });

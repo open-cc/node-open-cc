@@ -4,7 +4,7 @@
   "description": "api base",
   "main": "dist/src/index.js",
   "bin": {
-    "open-cc-api-container": "dist/src/index.js"
+    "open-cc-api-container": "dist/src/bin.js"
   },
   "repository": {
     "type": "git",
@@ -30,6 +30,6 @@
   "dependencies": {
     "ddd-es-node": "^0.0.26",
     "debug": "4.1.1",
-    "meshage": "^0.2.8"
+    "meshage": "^0.2.9"
   }
 }

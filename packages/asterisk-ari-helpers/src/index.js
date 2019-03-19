@@ -2,7 +2,7 @@ const debug = require('debug');
 
 module.exports = (ari, context) => {
     context = context || {};
-    context.log = debug(context.id || 'asterisk-ari-helpers');
+    context.log = context.log || debug(context.id || 'asterisk-ari-helpers');
     return {
         originate: (endpointToDial, channel, opts) => {
 
@@ -51,9 +51,9 @@ const hangupDialed = (context, channel, dialed) => {
 const hangupOriginal = (context, channel, dialed) => {
     context.log(`Dialed channel ${dialed.name} has been hung up, hanging up channel ${channel.name}`);
     // hangup the other end
-    channel.hangup(() => {
-        // ignore error since original channel could have hung up, causing the
-        // dialed channel to exit Stasis
+    channel.hangup((err) => {
+      // ignore error since dialed channel could have hung up, causing the
+      // original channel to exit Stasis
     });
 };
 

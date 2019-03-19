@@ -1,37 +1,24 @@
 import {
   Stasis,
+  StasisAppHandler,
   StasisAppRegistration,
-  StasisConnected,
+  StasisConnectedHandler,
   StasisContainerConfig
 } from './interfaces';
 import * as ari from 'ari-client';
 import * as debug from 'debug';
-import superagent = require('superagent');
 
 const log : debug.Debugger = debug('asterisk-stasis-container');
 
 const stasisHandlers : { [id : string] : StasisAppRegistration } = {};
 
 export class ARIInitializer {
-  constructor(private ariConnector : ari.ARIConnector, private sa : superagent.SuperAgent<any>) {
+  constructor(private ariConnector : ari.ARIConnector, private fetchInstance : typeof fetch) {
   }
 
-  public connect(config : StasisContainerConfig) : StasisConnected {
-    let initializedAri : ari.ARI;
-    const earlyRegistrations: string[] = [];
+  public connect(config : StasisContainerConfig, onConnected : StasisConnectedHandler) : void {
     config.log = config.log || log;
     config.log(`Connect requested to ${config.url}`);
-    const connected : StasisConnected = {
-      register: (id : string, app : StasisAppRegistration) : void => {
-        config.log('Registering handler', id);
-        stasisHandlers[id] = app;
-        if (initializedAri) {
-          initializedAri.start(id);
-        } else {
-          earlyRegistrations.push(id);
-        }
-      }
-    };
     config.maxConnectAttempts = config.maxConnectAttempts || 30;
     config.connectAttemptInterval = config.connectAttemptInterval || 1000;
     new Promise<ari.ARI>((
@@ -39,10 +26,24 @@ export class ARIInitializer {
       reject : (error : Error) => void) => {
       const init = (attempt : number = 0) => {
         config.log(`Attempting to connect to ${config.url} [${attempt} of ${config.maxConnectAttempts}]`);
-        this.sa
-          .get(`${config.url}/ari/asterisk/info`)
-          .auth(config.username, config.password)
-          .then(() => {
+
+        const fail = (err : Error) => {
+          if (config.maxConnectAttempts === attempt) {
+            reject(err);
+          } else {
+            setTimeout(() => {
+              init(attempt + 1)
+            }, config.connectAttemptInterval);
+          }
+        };
+
+        this.fetchInstance(`${config.url}/ari/asterisk/info`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `basic ${Buffer.from(`${config.username}:${config.password}`).toString('base64')}`
+          }
+        }).then(res => {
+          if (res.ok) {
             this.ariConnector.connect(
               config.url,
               config.username,
@@ -54,37 +55,39 @@ export class ARIInitializer {
                   resolve(ari);
                 }
               });
-          })
-          .catch((err : Error) => {
-            if (config.maxConnectAttempts === attempt) {
-              reject(err);
-            } else {
-              setTimeout(() => {
-                init(attempt + 1)
-              }, config.connectAttemptInterval);
-            }
-          });
+          } else {
+            fail(new Error(`${res.status} ${res.statusText}`));
+          }
+        }).catch(fail);
       };
       init();
     }).then((ariInstance : ari.ARI) => {
-      initializedAri = ariInstance;
-      while (earlyRegistrations.length > 0) {
-        ariInstance.start(earlyRegistrations.pop());
-      }
+      const apps : StasisAppRegistration[] = toArray(onConnected(ariInstance));
+      apps.forEach((app : StasisAppRegistration) => {
+        ariInstance.start(app.id);
+        stasisHandlers[app.id] = app;
+      });
       ariInstance.on('StasisStart', (event : any, channel : any) => {
         config.log('Stasis app started', event);
-        const handler : StasisAppRegistration = stasisHandlers[event.application];
-        if (handler) {
-          handler(ariInstance)(event, channel);
+        const app : StasisAppRegistration = stasisHandlers[event.application];
+        if (app) {
+          app.handler(event, channel);
         }
       });
     });
-    return connected;
   }
 }
 
-const stasis : Stasis = (config : StasisContainerConfig) : StasisConnected => {
-  return new ARIInitializer(ari, superagent).connect(config);
+const toArray = (appRegistration : StasisAppRegistration | StasisAppRegistration[]) : StasisAppRegistration[] => {
+  return Array.isArray(appRegistration) ? appRegistration : [appRegistration];
+};
+
+const stasis : Stasis = (config : StasisContainerConfig, onConnected : StasisConnectedHandler) : void => {
+  new ARIInitializer(ari, fetch).connect(config, onConnected);
+};
+
+export const stasisApp = (id : string, handler : StasisAppHandler) : StasisAppRegistration => {
+  return {id, handler};
 };
 
 export default stasis;
