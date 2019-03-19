@@ -13,7 +13,8 @@ export default ({router, log}) => {
     password: asteriskCredentials.split(/:/)[1],
     log
   }, (ari : ari.ARI) => {
-    return stasisApp('example-stasis-app', async event => {
+
+    router.register('events', async (event) => {
       log('Got event', event);
       switch (event.name) {
         case 'RoutingCompleteEvent': {
@@ -38,6 +39,35 @@ export default ({router, log}) => {
           break;
         }
       }
+    });
+
+    return stasisApp('example-stasis-app', (event : any, channel : ari.Channel) => {
+
+      log('started example-stasis-app on', asteriskURL);
+
+      channel.once('StasisEnd', () => {
+        router.send({
+          stream: 'interactions',
+          partitionKey: channel.id,
+          data: {
+            interactionId: channel.id,
+            name: 'ended'
+          }
+        });
+      });
+
+      router.send({
+        stream: 'interactions',
+        partitionKey: channel.id,
+        data: {
+          name: 'started',
+          channel: 'voice',
+          interactionId: channel.id,
+          fromPhoneNumber: channel.caller.number,
+          toPhoneNumber: channel.connected.number
+        }
+      });
+
     });
   });
 };
