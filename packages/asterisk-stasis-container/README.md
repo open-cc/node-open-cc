@@ -11,20 +11,19 @@ npm install @open-cc/asterisk-stasis-container --save
 ## Usage
 
 ```javascript
-const stasis = require('@open-cc/asterisk-stasis-container');
+import stasis, {stasisApp} from '@open-cc/asterisk-stasis-container';
 
 stasis('http://asterisk-host:8888/', {
-    auth: { username: 'yourARIUser', password: 'yourARIUserPassword' }
-}).then(ari => {
-  ari.start('your-stasis-app', (event, channel) => {
-    ...
+    auth: { username: 'yourARIUser', password: 'yourARIUserPassword' } 
+  }, (ari) => { return stasisApp('example-stasis-app', (event, channel) => {
+    // handle stasis event
   });
 });
 ```
 
 ## Asterisk Config
 
-Configure your Asterisk dialplan to launch a stasis application using the [`Stasis`](https://wiki.asterisk.org/wiki/display/AST/Asterisk+15+Application_Stasis) dialplan function - e.g:
+Configure your Asterisk dialplan (`extensions.conf`) to launch a stasis application using the [`Stasis`](https://wiki.asterisk.org/wiki/display/AST/Asterisk+15+Application_Stasis) dialplan function - e.g:
 ```
 [default]
 exten => _+1NXXXXXXXXX,1,NoOp()
@@ -32,13 +31,15 @@ same => n,Stasis(your-stasis-app-name)
 same => n,Hangup()
 ```
 
-Ensure that the http interface is enabled within your `http.conf` and you've set the bindaddr to a address which will be routable from your Stasis app:
+Ensure that the http interface is enabled within your `http.conf` and you've set the `bindaddr` to an address which is routable from your Stasis app:
+
 ```
 enabled=yes
 bindaddr=0.0.0.0
 ```
 
 Enable the Asterisk REST Interface in `ari.conf` and define a user + password:
+
 ```
 [general]
 enabled=yes
@@ -51,7 +52,9 @@ password=yourARIUserPassword
 ```
 
 ## Debug Logs
+
 Set the following environment variable to enable debug logging.
+
 ```shell
 DEBUG=asterisk-stasis-container
 ```

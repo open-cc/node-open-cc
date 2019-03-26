@@ -1,5 +1,7 @@
 import {EntityEvent} from 'ddd-es-node';
 
+const DEFAULT_ENDPOINT = process.env.DEFAULT_ENDPOINT || 'SIP/1002';
+
 export default ({router, log}) => {
   router.register('events', (message : EntityEvent) => {
     switch (message.name) {
@@ -12,7 +14,7 @@ export default ({router, log}) => {
             data: {
               name: 'RoutingCompleteEvent',
               streamId: message.streamId,
-              endpoint: 'SIP/1002'
+              endpoint: DEFAULT_ENDPOINT
             }
           });
         }, 1000);
