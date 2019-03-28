@@ -14,12 +14,32 @@ export default ({router, log}) => {
     password: asteriskCredentials.split(/:/)[1],
     log
   }, (ari : ari.ARI) => {
+
+
+    setInterval(() => {
+      ari.endpoints.list(
+        (err : Error, endpoints : ari.Endpoint[]) => {
+          endpoints.forEach((endpoint : ari.Endpoint) => {
+            const address : string = `${endpoint.technology}/${endpoint.resource}`;
+            router.broadcast({
+              stream: 'workers',
+              data: {
+                name: 'register',
+                connected: endpoint.state === 'online',
+                address,
+              }
+            })
+          });
+        }
+      );
+    }, 1000);
+
     router.register('events', async (event) => {
       log('Got event', event);
       switch (event.name) {
         case 'RoutingCompleteEvent': {
           try {
-            const channel = await ari.channels.get({channelId: event.streamId});
+            const channel : ari.Channel = await (ari.channels.get({channelId: event.streamId}) as Promise<ari.Channel>);
             log('Got channel', channel.id);
             channel.answer((err : Error) => {
               if (err) {
@@ -48,6 +68,11 @@ export default ({router, log}) => {
           }
           break;
         }
+        case 'RoutingFailedEvent':
+          const channel : ari.Channel = await (ari.channels.get({channelId: event.streamId}) as Promise<ari.Channel>);
+          log('Got channel', channel.id);
+          channel.hangup();
+          break;
       }
     });
 

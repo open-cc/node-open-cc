@@ -6,6 +6,13 @@ module.exports = {
     "^.+\\.ts$": 'ts-jest'
   },
   setupFiles: ['<rootDir>/../api-container/jestSetup.js'],
+  globals: {
+    'ts-jest': {
+      diagnostics: {
+        warnOnly: true
+      }
+    }
+  },
   moduleFileExtensions: [
     'js',
     'ts',

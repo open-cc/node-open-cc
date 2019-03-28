@@ -40,7 +40,6 @@ services:
   routing_api:
     image: node-open-cc-packages:latest
     environment:
-      - DEFAULT_ENDPOINT=PJSIP/1002
       - SERVICES=/opt/app/packages/routing-api/dist/src/index.js
       - SEEDS=stasis_app:9742
       - DEBUG=api-container:*,-api-container:container

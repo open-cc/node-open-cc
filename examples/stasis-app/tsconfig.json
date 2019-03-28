@@ -24,8 +24,8 @@
     "removeComments": true,
     "baseUrl": ".",
     "paths": {
-      "*": [
-        "./typings/*"
+      "ari-client": [
+        "./node_modules/@open-cc/asterisk-ari-types"
       ]
     }
   },
