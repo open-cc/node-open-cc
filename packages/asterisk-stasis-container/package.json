@@ -2,11 +2,9 @@
   "name": "@open-cc/asterisk-stasis-container",
   "version": "0.0.0",
   "description": "A container for asterisk stasis applications",
-  "main": "dist/src/index.js",
+  "main": "./src/index",
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch --coverage",
-    "build": "tsc -p tsconfig.json",
     "prepublishOnly": "npm run test"
   },
   "repository": {
@@ -28,12 +26,12 @@
     "access": "public"
   },
   "dependencies": {
-    "@open-cc/asterisk-ari-types": "0.0.0",
-    "ari-client": "^1.2.0",
+    "ari-client": "2.2.0",
     "debug": "^3.1.0",
     "node-fetch": "2.3.0"
   },
   "devDependencies": {
+    "@types/ari-client": "2.2.1",
     "@types/node-fetch": "2.1.6"
   }
 }

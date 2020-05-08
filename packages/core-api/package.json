@@ -1,11 +1,13 @@
 {
-  "name": "@open-cc/asterisk-ari-helpers",
+  "name": "@open-cc/core-api",
   "version": "0.0.0",
-  "description": "Provides helper functions to be used with [ari-client](https://www.npmjs.com/package/ari-client)",
-  "main": "./src/index",
+  "description": "core routing and interactions api",
+  "main": "src/index",
+  "bin": {
+    "open-cc-api-server": "dist/src/server/index.js"
+  },
   "scripts": {
     "test": "jest",
-    "test:watch": "jest --watch --coverage",
     "prepublishOnly": "npm run test"
   },
   "repository": {
@@ -14,8 +16,7 @@
   },
   "keywords": [
     "asterisk",
-    "ari",
-    "ari-client",
+    "stasis",
     "nodejs"
   ],
   "author": "John Collier <john.collier4@gmail.com>",
@@ -28,6 +29,9 @@
     "access": "public"
   },
   "dependencies": {
-    "debug": "^3.1.0"
+    "@open-cc/api-common": "^0.0.0",
+    "ddd-es-node": "0.3.96",
+    "debug": "4.1.1",
+    "meshage": "0.3.96"
   }
 }

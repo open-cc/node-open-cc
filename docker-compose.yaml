@@ -1,0 +1,43 @@
+version: '3'
+services:
+  asterisk:
+    image: dougbtv/asterisk13
+    volumes:
+      - "./examples/stasis-app/etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
+      - "./examples/stasis-app/etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
+      - "./examples/stasis-app/etc/asterisk/http.conf:/etc/asterisk/http.conf"
+      - "./examples/stasis-app/etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
+      - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
+      - "./examples/stasis-app/etc/asterisk/rtp.conf:/etc/asterisk/rtp.conf"
+      - "./examples/stasis-app/etc/asterisk/sip.conf:/etc/asterisk/sip.conf"
+    ports:
+      - "8088:8088"
+      - "5060:5060/tcp"
+      - "5060:5060/udp"
+      - "10001-10100:10001-10100/udp"
+    #network_mode: host
+  stasis_app:
+    image: node-open-cc-packages:latest
+    build: .
+    environment:
+      - SERVICES=/opt/app/examples/stasis-app/src/index.ts
+      # - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
+      - ASTERISK_URL=http://asterisk:8088
+      - ASTERISK_CREDS=ariUser:ariPassword
+      - DEBUG=api-container:*
+    ports:
+      - "8080:8080"
+    depends_on:
+      - asterisk
+  interaction_api:
+    image: node-open-cc-packages:latest
+    environment:
+      - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
+      - SEEDS=stasis_app:9742
+      - DEBUG=api-container:*
+  routing_api:
+    image: node-open-cc-packages:latest
+    environment:
+      - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
+      - SEEDS=stasis_app:9742
+      - DEBUG=api-container:*

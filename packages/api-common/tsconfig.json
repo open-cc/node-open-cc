@@ -24,10 +24,10 @@
     "experimentalDecorators": true,
     "rootDir": ".",
     "outDir": "dist",
-    "removeComments": true,
-    "baseUrl": "."
+    "removeComments": true
   },
   "include": [
+    "index.ts",
     "src/**/*"
   ]
 }

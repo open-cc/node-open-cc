@@ -1,28 +1,23 @@
-import * as ari from 'ari-client';
+import * as Ari from 'ari-client';
 import { IDebugger } from 'debug';
+import fetch from 'node-fetch';
 
 export interface StasisContainerConfig {
   url : string;
   username : string;
   password : string;
+  ariClient? : typeof Ari;
   maxConnectAttempts? : number;
   connectAttemptInterval? : number;
   log?: IDebugger;
+  fetch? : typeof fetch;
 }
 
 export interface StasisAppHandler {
-  (event?: any, channel?: ari.Channel): void;
+  (event?: any, channel?: Ari.Channel): void;
 }
 
-export interface StasisAppRegistration {
-  id: string,
-  handler: StasisAppHandler
-}
-
-export interface StasisConnectedHandler {
-  (ari: ari.ARI): StasisAppRegistration | StasisAppRegistration[];
-}
-
-export interface Stasis {
-  (config: StasisContainerConfig, handler: StasisConnectedHandler): void;
+export interface StasisConnection {
+  ari: Ari.Client,
+  registerStasisApp(id: string, handler: StasisAppHandler)
 }

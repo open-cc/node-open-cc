@@ -1,6 +1,6 @@
 # @open-cc/asterisk-stasis-container stasis-app
 
-This example configures an [Asterisk](https://wiki.asterisk.org/wiki/display/AST/Home) stasis app using [@open-cc/asterisk-stasis-container](../../asterisk-stasis-container/README.md).
+This example configures an [Asterisk](https://wiki.asterisk.org/wiki/display/AST/Home) stasis app using [@open-cc/asterisk-stasis-container](../../packages/asterisk-stasis-container/README.md).
 
 # Usage
 

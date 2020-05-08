@@ -2,14 +2,13 @@
   "name": "@open-cc-examples/stasis-app",
   "private": true,
   "version": "0.0.0",
-  "description": "An example statis app using node-open-cc packages",
-  "main": "dist/src/index.js",
-  "scripts": {
-    "build": "tsc -p tsconfig.json"
-  },
+  "description": "An example stasis app using node-open-cc packages",
+  "main": "src/index",
   "dependencies": {
+    "@types/ari-client": "2.2.1",
+    "@open-cc/api-common": "^0.0.0",
     "@open-cc/asterisk-ari-helpers": "^0.0.0",
-    "@open-cc/asterisk-ari-types": "^0.0.0",
-    "@open-cc/asterisk-stasis-container": "^0.0.0"
+    "@open-cc/asterisk-stasis-container": "^0.0.0",
+    "meshage": "0.3.96"
   }
 }
