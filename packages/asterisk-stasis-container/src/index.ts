@@ -6,10 +6,11 @@ import {
   StasisContainerConfig,
   StasisConnection
 } from './core/interfaces';
-
-export const Arsi = Ari;
+import {StasisStart} from "ari-client";
 
 export * from './core/interfaces';
+
+export * from './core/actions';
 
 const log : debug.Debugger = debug('asterisk-stasis-container');
 
@@ -18,7 +19,7 @@ const stasisAppHandlers : { [id : string] : StasisAppHandler } = {};
 export async function stasisConnect(config : StasisContainerConfig) : Promise<StasisConnection> {
   config.fetch = config.fetch || fetch;
   config.log = config.log || log;
-  config.ariClient = config.ariClient || Ari;
+  config.ariModule = config.ariModule || Ari;
   config.log(`Connect requested to ${config.url}`);
   config.maxConnectAttempts = config.maxConnectAttempts || 30;
   config.connectAttemptInterval = config.connectAttemptInterval || 1000;
@@ -44,7 +45,7 @@ export async function stasisConnect(config : StasisContainerConfig) : Promise<St
         }
       }).then(res => {
         if (res.ok) {
-          config.ariClient.connect(
+          config.ariModule.connect(
             config.url,
             config.username,
             config.password, (err : Error, ari : Ari.Client) => {
@@ -57,10 +58,10 @@ export async function stasisConnect(config : StasisContainerConfig) : Promise<St
                   registerStasisApp: (id : string, handler : StasisAppHandler) => {
                     stasisAppHandlers[id] = handler;
                     ari.start(id);
-                    ari.on('StasisStart', (event : any, channel : any) => {
+                    ari.on('StasisStart', (event : StasisStart, channel : any) => {
                       config.log('Stasis app started', event);
-                      if (stasisAppHandlers[id]) {
-                        stasisAppHandlers[id](event, channel);
+                      if (stasisAppHandlers[event.application]) {
+                        stasisAppHandlers[event.application](event, channel);
                       }
                     });
                   }

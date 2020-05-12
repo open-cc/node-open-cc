@@ -9,7 +9,7 @@ describe('connect', () => {
       start: jest.fn(),
       on: jest.fn()
     };
-    const fakeAriClient : any = {
+    const fakeAriModule : any = {
       connect: jest.fn((url, username, password, cb) => {
         cb(null, fakeAriInstance);
       })
@@ -19,7 +19,7 @@ describe('connect', () => {
       username: 'un',
       password: 'pass',
       connectAttemptInterval: 1,
-      ariClient: fakeAriClient,
+      ariModule: fakeAriModule,
       fetch: <typeof fetch> fakeFetch
     });
     connection.registerStasisApp('some-app', () => {});

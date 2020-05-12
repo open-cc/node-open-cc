@@ -1,4 +1,7 @@
-.git
 *Dockerfile*
 *docker-compose*
+.git
+.idea
+.vagrant
+coverage
 node_modules

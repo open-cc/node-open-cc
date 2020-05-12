@@ -1,8 +1,8 @@
 import {ApiDeps} from '@open-cc/api-common';
 import {MessageHeader} from 'meshage';
 import * as Ari from 'ari-client';
-import * as ariHelpers from '@open-cc/asterisk-ari-helpers';
 import {
+  Originate,
   stasisConnect,
   StasisConnection
 } from '@open-cc/asterisk-stasis-container';
@@ -18,7 +18,7 @@ export default async ({router, log} : ApiDeps) => {
     url: asteriskURL,
     username: asteriskCredentials.split(/:/)[0],
     password: asteriskCredentials.split(/:/)[1],
-    log
+    log: log.extend('stasis')
   });
 
   await router.register({
@@ -28,29 +28,22 @@ export default async ({router, log} : ApiDeps) => {
         case 'RoutingCompleteEvent': {
           try {
             const channel : Ari.Channel = await connection.ari.channels.get({channelId: header.partitionKey});
-            log('Got channel', channel.id);
-            channel.answer((err : Error) => {
-              if (err) {
-                log('Error answering incoming call', err);
-              } else {
-                ariHelpers(connection.ari, {log}).originate(
-                  message.endpoint,
-                  channel, {
-                    onAnswer() {
-                      log('Got answer', channel.id);
-                      router.send({
-                        stream: 'interactions',
-                        partitionKey: channel.id,
-                        data: {
-                          name: 'answered',
-                          interactionId: channel.id,
-                          endpoint: message.endpoint
-                        }
-                      });
-                    }
-                  });
-              }
-            });
+            try {
+              await channel.answer();
+              new Originate(connection.ari, log, message.endpoint, channel, async () => {
+                await router.send({
+                  stream: 'interactions',
+                  partitionKey: channel.id,
+                  data: {
+                    name: 'answered',
+                    interactionId: channel.id,
+                    endpoint: message.endpoint
+                  }
+                });
+              }).execute();
+            } catch (err) {
+              log('Error answering incoming call', err);
+            }
           } catch (err) {
             log(`Channel ${header.partitionKey} not found`);
           }
@@ -58,7 +51,6 @@ export default async ({router, log} : ApiDeps) => {
         }
         case 'RoutingFailedEvent':
           const channel : Ari.Channel = await connection.ari.channels.get({channelId: header.partitionKey});
-          log('Got channel', channel.id);
           await channel.hangup();
           break;
       }
@@ -94,9 +86,9 @@ export default async ({router, log} : ApiDeps) => {
     );
   }, 1000);
 
-  connection.registerStasisApp('example-stasis-app', async (event : any, channel : Ari.Channel) => {
+  connection.registerStasisApp('example-stasis-app', async (stasisStartEvent : Ari.StasisStart, channel : Ari.Channel) => {
     log('Started example-stasis-app on', asteriskURL);
-    channel.once('StasisEnd', async () => {
+    channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
       await router.send({
         stream: 'interactions',
         partitionKey: channel.id,
@@ -106,11 +98,13 @@ export default async ({router, log} : ApiDeps) => {
         }
       });
     });
+    log('StasisStartedEvent', stasisStartEvent);
     await router.send({
       stream: 'interactions',
       partitionKey: channel.id,
       data: {
         name: 'started',
+        source: stasisStartEvent.channel.name + '-' + stasisStartEvent.application,
         channel: 'voice',
         interactionId: channel.id,
         fromPhoneNumber: channel.caller.number,

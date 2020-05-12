@@ -6,7 +6,7 @@ export interface StasisContainerConfig {
   url : string;
   username : string;
   password : string;
-  ariClient? : typeof Ari;
+  ariModule? : typeof Ari;
   maxConnectAttempts? : number;
   connectAttemptInterval? : number;
   log?: IDebugger;

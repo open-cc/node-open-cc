@@ -16,9 +16,16 @@ export default async ({router, entityRepository, eventBus, log} : ApiDeps) => {
   projections.init(eventBus);
 
   await router.register({
+    stream: 'events',
+    messageHandler: async (message : any) => {
+      switch (message.name) {
+
+      }
+    }
+  }, {
     stream: 'interactions',
     messageHandler: async (message : any) => {
-      log(`interactions ${JSON.stringify(message,null,2)}`);
+      log(`interactions ${JSON.stringify(message, null, 2)}`);
       switch (message.name) {
         case 'started': {
           if ('voice' === message.channel) {
@@ -46,10 +53,8 @@ export default async ({router, entityRepository, eventBus, log} : ApiDeps) => {
           const interactionModel = projections.findInteraction(message.interactionId);
           if (interactionModel) {
             const channel = interactionModel.channel;
-            interactionServices[channel]
-              .answer(message.interactionId, message.endpoint)
-              .then(() => {
-              });
+            await interactionServices[channel]
+              .answer(message.interactionId, message.endpoint);
           } else {
             log(`Unable to answer interaction, ${message.interactionId} not found`);
           }

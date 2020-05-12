@@ -61,6 +61,9 @@ export default async ({router, entityRepository, log} : ApiDeps) => {
     {
       stream: 'events',
       messageHandler: async (message : any) => {
+
+        workerService.handleMessage(message);
+
         switch (message.name) {
           case 'WorkerAddressAssignedEvent': {
             const event : WorkerAddressAssignedEvent = <WorkerAddressAssignedEvent>message;
@@ -91,10 +94,24 @@ export default async ({router, entityRepository, log} : ApiDeps) => {
               return worker.address.indexOf(`/${(message as any).fromPhoneNumber}`) === -1;
             };
             const workerNotBusy = (worker : Worker) : boolean => {
-              return Object.keys(assignmentState).filter(a => assignmentState[a].workerId === worker.address).length === 0;
+              return Object.keys(assignmentState).filter(a => {
+                const isBusy = assignmentState[a].workerId === worker.address;
+                if (isBusy) {
+                  log(`${worker.address} is busy with assignment ${a}`);
+                }
+                return isBusy;
+              }).length === 0;
             };
             const workerSelector = (worker : Worker) : boolean => notCaller(worker) && workerNotBusy(worker);
             try {
+              await router.broadcast({
+                stream: 'events',
+                partitionKey: message.streamId,
+                data: {
+                  name: 'RoutingStartedEvent',
+                  streamId: message.streamId
+                }
+              });
               const worker = await waitForConnectedWorker(
                 message.streamId,
                 workerSelector,
@@ -103,7 +120,7 @@ export default async ({router, entityRepository, log} : ApiDeps) => {
                 async (duration) => {
                   await router.broadcast({
                     stream: 'events',
-                    partitionKey: message.streamId,
+                    partitionKey: '',
                     data: {
                       name: 'RoutingInProgressEvent',
                       duration,
