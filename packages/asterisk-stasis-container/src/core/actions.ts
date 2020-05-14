@@ -1,5 +1,6 @@
 import * as Ari from 'ari-client';
 import * as debug from 'debug';
+import {ChannelLeftBridge} from "ari-client";
 
 export interface AnswerHandler {
   (): Promise<void>;
@@ -47,7 +48,7 @@ export class Originate {
     try {
       await dialed.hangup();
     } catch (err) {
-      // ignore
+      this.logger(`Failed to hangup dialed channel ${dialed.name}`);
     }
   }
 
@@ -57,13 +58,23 @@ export class Originate {
     try {
       await channel.hangup();
     } catch (err) {
-      // ignore
+      this.logger(`Failed to hangup channel ${channel.name}`);
     }
   }
 
   private async joinMixingBridge(channel : Ari.Channel, dialed : Ari.Channel) {
 
     const bridge = this.ari.Bridge();
+
+    bridge.on('ChannelLeftBridge', async (event : Ari.ChannelLeftBridge, instances: ChannelLeftBridge) => {
+      this.logger(
+        `Channel ${instances.channel.name} has left the bridge, hanging up ${channel.name}`);
+      try {
+        await channel.hangup();
+      } catch (err) {
+        this.logger(`Failed to hang up channel ${channel.name}`);
+      }
+    });
 
     dialed.on('StasisEnd', async (event : Ari.StasisEnd, dialed) => {
       await this.dialedExit(dialed, bridge);

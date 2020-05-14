@@ -1,78 +1,93 @@
-import api, {workers} from './';
-import {test} from '@open-cc/api-common';
+import api, {workerService} from './';
+import {
+  ApiDeps,
+  test
+} from '@open-cc/api-common';
 import {ConnectedMessageRouter} from 'meshage';
 
 describe('router-api', () => {
-  let router: ConnectedMessageRouter;
+  let router : ConnectedMessageRouter;
   beforeEach(async () => {
-    router = (await test(api)).router;
+    const apiDeps : ApiDeps = await test(api);
+    router = apiDeps.router;
   });
   it('tracks worker state', async () => {
     await router.send({
       stream: 'workers',
-      partitionKey: 'SIP/1002',
+      partitionKey: 'thePartitionKey',
       data: {
         name: 'UpdateWorkerRegistration',
+        workerId: 'worker1002',
         address: 'SIP/1002',
         connected: true
       }
     });
     await wait(1);
-    expect(workers['SIP/1002'].address).toBe('SIP/1002');
-    expect(workers['SIP/1002'].connected).toBe(true);
+    expect(workerService.getWorkersState()['worker1002']).toBeDefined();
+    expect(workerService.getWorkersState()['worker1002'].address).toBe('SIP/1002');
+    expect(workerService.getWorkersState()['worker1002'].status).toBe('online');
     await router.send({
       stream: 'workers',
-      partitionKey: 'SIP/1002',
+      partitionKey: 'thePartitionKey',
       data: {
         name: 'UpdateWorkerRegistration',
+        workerId: 'worker1002',
         address: 'SIP/1002',
         connected: false
       }
     });
     await wait(1);
-    expect(workers['SIP/1002'].connected).toBe(false);
+    expect(workerService.getWorkersState()['worker1002'].status).toBe('offline');
   });
   it('routes', async () => {
     setTimeout(async () => {
       await router.send({
         stream: 'workers',
-        partitionKey: 'SIP/1002',
+        partitionKey: 'thePartitionKey',
         data: {
           name: 'UpdateWorkerRegistration',
+          workerId: 'worker1002',
           address: 'SIP/1002',
           connected: true
         }
       });
     }, 100);
+    await wait(21);
     await router.send({
       stream: 'events',
-      partitionKey: '123',
+      partitionKey: 'thePartitionKey',
       data: {
         name: 'CallInitiatedEvent',
         streamId: '123',
-        fromPhoneNumber: '1001',
-        maxWaitAttempts: 3,
-        waitInterval: 100
+        fromAddress: 'SIP/1001',
+        waitInterval: 90,
+        waitTimeout: 1000000
       }
     });
-    await wait(21);
+    await wait(101);
     expect(router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
-      partitionKey: '123',
-      data: {
+      partitionKey: '_',
+      data: expect.objectContaining({
+        name: 'RoutingStartedEvent',
+        streamId: '123'
+      })
+    });
+    expect(router.broadcast).toHaveBeenCalledWith({
+      stream: 'events',
+      partitionKey: '_',
+      data: expect.objectContaining({
         name: 'RoutingInProgressEvent',
-        duration: expect.any(Number),
         streamId: '123'
-      }
+      })
     });
     expect(router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
-      partitionKey: '123',
-      data: {
+      partitionKey: '_',
+      data: expect.objectContaining({
         name: 'RoutingCompleteEvent',
-        endpoint: 'SIP/1002',
-        streamId: '123'
-      }
+        endpoint: 'SIP/1002'
+      })
     });
   });
 });

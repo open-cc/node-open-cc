@@ -10,8 +10,8 @@ describe('calls', () => {
                         expect(es.eventDispatcher).toHaveDispatched({
                             name: 'CallInitiatedEvent',
                             channel: 'voice',
-                            fromPhoneNumber: '+15555555555',
-                            toPhoneNumber: '+15555555554',
+                            fromAddress: '+15555555555',
+                            toAddress: '+15555555554',
                             streamId: 'call1234'
                         });
                     });

@@ -16,14 +16,14 @@ describe('interaction-api', () => {
         name: 'started',
         interactionId: '123',
         channel: 'voice',
-        fromPhoneNumber: '+15555555555',
-        toPhoneNumber: '+15555555554'
+        fromAddress: '+15555555555',
+        toAddress: '+15555555554'
       }
     });
     await wait(1);
     expect(router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
-      partitionKey: '123',
+      partitionKey: '_',
       data: expect.objectContaining({
         name: 'CallInitiatedEvent'
       })
@@ -41,13 +41,25 @@ describe('interaction-api', () => {
     await wait(1);
     expect(router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
-      partitionKey: '123',
+      partitionKey: '_',
       data: expect.objectContaining({
         name: 'InteractionEndedEvent'
       })
     });
   });
   it('gets interactions', async () => {
+    await router.send({
+      stream: 'interactions',
+      partitionKey: '123',
+      data: {
+        name: 'started',
+        interactionId: '123',
+        channel: 'voice',
+        fromAddress: '+15555555555',
+        toAddress: '+15555555554'
+      }
+    });
+    await wait(1);
     const res = await router.send({
       stream: 'interactions',
       partitionKey: '',
@@ -55,7 +67,7 @@ describe('interaction-api', () => {
         name: 'get'
       }
     });
-    expect(res[0].fromPhoneNumber).toBe('+15555555555');
+    expect(res[0].fromAddress).toBe('+15555555555');
   });
 });
 

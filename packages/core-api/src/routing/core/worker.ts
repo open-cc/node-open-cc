@@ -62,24 +62,14 @@ export class WorkerService {
     switch (message.name) {
       case 'WorkerAddressAssignedEvent': {
         const event : WorkerAddressAssignedEvent = <WorkerAddressAssignedEvent>message;
-        this.workers[message.streamId] = {
-          ...(this.workers[message.streamId] || {
-            address: '',
-            status: ''
-          }),
-          address: event.address
-        };
+        this.workers[message.streamId] = this.workers[message.streamId] || {};
+        this.workers[message.streamId].address = event.address;
         break;
       }
       case 'WorkerStatusChangedEvent': {
         const event : WorkerStatusChangedEvent = <WorkerStatusChangedEvent>message;
-        this.workers[message.streamId] = {
-          ...(this.workers[message.streamId] || {
-            address: '',
-            status: ''
-          }),
-          status: event.status
-        };
+        this.workers[message.streamId] = this.workers[message.streamId] || {};
+        this.workers[message.streamId].status = event.status;
         break;
       }
     }

@@ -18,6 +18,7 @@ export interface StasisAppHandler {
 }
 
 export interface StasisConnection {
+  asteriskId: string,
   ari: Ari.Client,
   registerStasisApp(id: string, handler: StasisAppHandler)
 }

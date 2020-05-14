@@ -29,7 +29,7 @@ async function run() {
     try {
       await router.broadcast({
         stream: 'events',
-        partitionKey: event.streamId,
+        partitionKey: '_',
         data: event
       });
       log('Broadcast event', event);

@@ -15,12 +15,14 @@ import {
 } from 'ddd-es-node';
 import {
   createMemoryEventDispatcher,
-  memoryEventStore
+  memoryEventStore,
+  clearMemoryEvents
 } from 'ddd-es-node/runtime/in-memory';
 import {LocalEventBus} from 'ddd-es-node/runtime/local-event-bus';
 import * as debug from 'debug';
 
 export const test = async (api : Api) : Promise<ApiDeps> => {
+  clearMemoryEvents();
   const eventBus : LocalEventBus = new LocalEventBus(memoryEventStore);
   const dispatcher : EventDispatcher = createMemoryEventDispatcher(eventBus);
   const handlers : { [stream : string] : MessageHandler } = {};
@@ -43,8 +45,8 @@ export const test = async (api : Api) : Promise<ApiDeps> => {
     try {
       await router.broadcast({
         stream: 'events',
-        partitionKey: event.streamId,
-        data: event
+        partitionKey: '_',
+        data: JSON.parse(JSON.stringify(event))
       });
       //log('broadcast event', event);
     } catch (err) {

@@ -15,14 +15,7 @@ export default async ({router, entityRepository, eventBus, log} : ApiDeps) => {
 
   projections.init(eventBus);
 
-  await router.register({
-    stream: 'events',
-    messageHandler: async (message : any) => {
-      switch (message.name) {
-
-      }
-    }
-  }, {
+  await router.register( {
     stream: 'interactions',
     messageHandler: async (message : any) => {
       log(`interactions ${JSON.stringify(message, null, 2)}`);
@@ -33,8 +26,8 @@ export default async ({router, entityRepository, eventBus, log} : ApiDeps) => {
               .voice
               .initiateCall(
                 message.interactionId,
-                message.fromPhoneNumber,
-                message.toPhoneNumber);
+                message.fromAddress,
+                message.toAddress);
           }
           break;
         }

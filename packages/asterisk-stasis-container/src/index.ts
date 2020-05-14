@@ -7,6 +7,7 @@ import {
   StasisConnection
 } from './core/interfaces';
 import {StasisStart} from "ari-client";
+import {AsteriskPing} from "ari-client";
 
 export * from './core/interfaces';
 
@@ -53,20 +54,24 @@ export async function stasisConnect(config : StasisContainerConfig) : Promise<St
                 reject(err);
               } else {
                 config.log(`Connected to ${config.url}`);
-                const stasisConnection : StasisConnection = {
-                  ari,
-                  registerStasisApp: (id : string, handler : StasisAppHandler) => {
-                    stasisAppHandlers[id] = handler;
-                    ari.start(id);
-                    ari.on('StasisStart', (event : StasisStart, channel : any) => {
-                      config.log('Stasis app started', event);
-                      if (stasisAppHandlers[event.application]) {
-                        stasisAppHandlers[event.application](event, channel);
+                ari.asterisk.ping()
+                  .then((asteriskPing: AsteriskPing) => {
+                    const stasisConnection : StasisConnection = {
+                      asteriskId: asteriskPing.asterisk_id,
+                      ari,
+                      registerStasisApp: (id : string, handler : StasisAppHandler) => {
+                        stasisAppHandlers[id] = handler;
+                        ari.start(id);
+                        ari.on('StasisStart', (event : StasisStart, channel : any) => {
+                          config.log('Stasis app started', event);
+                          if (stasisAppHandlers[event.application]) {
+                            stasisAppHandlers[event.application](event, channel);
+                          }
+                        });
                       }
-                    });
-                  }
-                };
-                resolve(stasisConnection);
+                    };
+                    resolve(stasisConnection);
+                  });
               }
             });
         } else {

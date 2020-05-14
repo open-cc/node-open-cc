@@ -1,5 +1,4 @@
 import {ApiDeps} from '@open-cc/api-common';
-import {MessageHeader} from 'meshage';
 import * as Ari from 'ari-client';
 import {
   Originate,
@@ -23,20 +22,20 @@ export default async ({router, log} : ApiDeps) => {
 
   await router.register({
     stream: 'events',
-    messageHandler: async (message : any, header : MessageHeader) => {
+    messageHandler: async (message : any) => {
       switch (message.name) {
         case 'RoutingCompleteEvent': {
           try {
-            const channel : Ari.Channel = await connection.ari.channels.get({channelId: header.partitionKey});
+            const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
             try {
               await channel.answer();
               new Originate(connection.ari, log, message.endpoint, channel, async () => {
                 await router.send({
                   stream: 'interactions',
-                  partitionKey: channel.id,
+                  partitionKey: connection.asteriskId,
                   data: {
                     name: 'answered',
-                    interactionId: channel.id,
+                    interactionId: message.interactionId,
                     endpoint: message.endpoint
                   }
                 });
@@ -45,12 +44,12 @@ export default async ({router, log} : ApiDeps) => {
               log('Error answering incoming call', err);
             }
           } catch (err) {
-            log(`Channel ${header.partitionKey} not found`);
+            log(`Channel ${message.interactionId} not found`);
           }
           break;
         }
         case 'RoutingFailedEvent':
-          const channel : Ari.Channel = await connection.ari.channels.get({channelId: header.partitionKey});
+          const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
           await channel.hangup();
           break;
       }
@@ -67,13 +66,13 @@ export default async ({router, log} : ApiDeps) => {
           try {
             await Promise.all(endpoints.map(endpoint => {
               const address : string = `${endpoint.technology}/${endpoint.resource}`;
-              // log(`Found endpoint ${address}`);
-              return router.broadcast({
+              return router.send({
                 stream: 'workers',
-                partitionKey: address,
+                partitionKey: connection.asteriskId,
                 data: {
                   name: 'UpdateWorkerRegistration',
                   connected: endpoint.state === 'online',
+                  workerId: address,
                   address,
                 }
               });
@@ -91,7 +90,7 @@ export default async ({router, log} : ApiDeps) => {
     channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
       await router.send({
         stream: 'interactions',
-        partitionKey: channel.id,
+        partitionKey: connection.asteriskId,
         data: {
           interactionId: channel.id,
           name: 'ended'
@@ -99,16 +98,17 @@ export default async ({router, log} : ApiDeps) => {
       });
     });
     log('StasisStartedEvent', stasisStartEvent);
+    // dialplan: { context: 'stasis-example-stasis-app', exten: '23', priority: 1 },
     await router.send({
       stream: 'interactions',
-      partitionKey: channel.id,
+      partitionKey: connection.asteriskId,
       data: {
         name: 'started',
         source: stasisStartEvent.channel.name + '-' + stasisStartEvent.application,
         channel: 'voice',
         interactionId: channel.id,
-        fromPhoneNumber: channel.caller.number,
-        toPhoneNumber: channel.connected.number
+        fromAddress: `PJSIP/${channel.caller.number}`,
+        toAddress: stasisStartEvent.channel.dialplan.exten
       }
     });
   });

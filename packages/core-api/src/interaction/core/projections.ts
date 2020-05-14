@@ -19,8 +19,8 @@ export const init = (eventBus : EventBus) => {
             interactionsView[event.streamId].channel = event.channel;
             interactionsView[event.streamId].startedOn = event.timestamp;
             if (event instanceof CallInitiatedEvent) {
-                interactionsView[event.streamId].fromPhoneNumber = event.fromPhoneNumber;
-                interactionsView[event.streamId].toPhoneNumber = event.toPhoneNumber;
+                interactionsView[event.streamId].fromAddress = event.fromAddress;
+                interactionsView[event.streamId].toAddress = event.toAddress;
             }
         } else if (event instanceof InteractionAnsweredEvent) {
             if (interactionsView[event.streamId]) {
