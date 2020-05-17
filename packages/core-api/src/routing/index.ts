@@ -1,10 +1,13 @@
 import {ApiDeps} from '@open-cc/api-common';
 import {WorkerService} from './core/worker';
 import {Route} from './core/route';
+import * as debug from 'debug';
+
+const log = debug('');
 
 export let workerService : WorkerService;
 
-export default async ({router, entityRepository, log} : ApiDeps) => {
+export default async ({router, entityRepository} : ApiDeps) => {
 
   workerService = new WorkerService(entityRepository);
 

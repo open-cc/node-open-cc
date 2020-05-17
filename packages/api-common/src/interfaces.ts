@@ -4,7 +4,6 @@ import {
   EventBus,
   EventStore
 } from 'ddd-es-node';
-import * as debug from 'debug';
 
 export interface Api {
   (deps : ApiDeps) : void;
@@ -15,5 +14,4 @@ export interface ApiDeps {
   eventBus : EventBus;
   eventStore : EventStore;
   entityRepository : EntityRepository;
-  log : debug.Debugger;
 }

@@ -11,6 +11,7 @@ import {
 } from 'ddd-es-node';
 import * as path from 'path';
 import * as debug from 'debug';
+import * as proxyquire from 'proxyquire';
 import {Api} from './interfaces';
 
 const services : string[] = (process.env.SERVICES || '').split(/,/);
@@ -39,14 +40,21 @@ async function run() {
   });
   services.forEach(service => {
     log(`Loading service ${service}`);
-    const required = require(service);
+    const logNamespace = `${logName}:${path.basename(path.dirname(service))}`;
+    const logger = debug(logNamespace);
+    const debugProxy = (namespace) => {
+      return namespace ? debug(`${logNamespace}:${namespace}`) : logger
+    };
+    debugProxy['@global'] = true;
+    const required = proxyquire(service, {
+      debug: debugProxy
+    });
     const api : Api = <Api>(typeof required === 'function' ? required : required.default);
     api({
       router,
       eventBus,
       eventStore,
-      entityRepository,
-      log: debug(`${logName}:${path.basename(service)}`)
+      entityRepository
     });
   });
   log(`Loaded service ${services}`);

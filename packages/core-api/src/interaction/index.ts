@@ -1,12 +1,15 @@
 import {ApiDeps} from '@open-cc/api-common';
 import {CallService} from './core/call';
 import * as projections from './core/projections';
+import * as debug from 'debug';
+
+const log = debug('');
 
 export {
   CallInitiatedEvent,
 } from './core/call';
 
-export default async ({router, entityRepository, eventBus, log} : ApiDeps) => {
+export default async ({router, entityRepository, eventBus} : ApiDeps) => {
   log('interaction-api started');
 
   const interactionServices = {

@@ -7,7 +7,6 @@
   "dependencies": {
     "@types/ari-client": "2.2.1",
     "@open-cc/api-common": "^0.0.0",
-    "@open-cc/asterisk-stasis-container": "^0.0.0",
-    "meshage": "0.3.97"
+    "@open-cc/asterisk-stasis-container": "^0.0.0"
   }
 }

@@ -23,7 +23,7 @@ services:
       - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
       # - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword
-      - DEBUG=api-container:*,-*:container
+      - DEBUG=api-container:*
     ports:
       - "8080:8080"
     depends_on:
@@ -39,4 +39,4 @@ services:
     environment:
       - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
       - SEEDS=stasis_app:9742
-      - DEBUG=api-container:*,-*:container
+      - DEBUG=api-container:*

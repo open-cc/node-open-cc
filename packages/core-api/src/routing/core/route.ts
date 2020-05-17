@@ -3,10 +3,13 @@ import {
   EntityEvent
 } from 'ddd-es-node';
 import {
+  WorkerService,
   WorkersState,
   WorkerState,
-  WorkerService,
 } from './worker';
+import * as debug from 'debug';
+
+const log = debug('route');
 
 interface TimerState {
  [key: string]: NodeJS.Timer[];
@@ -68,7 +71,9 @@ export class Route extends Entity {
       const worker : WorkerState = Object.keys(workersState)
         .map(id => workersState[id])
         .filter(worker => worker.status !== 'offline' && worker.address && worker.address !== fromAddress)[0];
+      log(`Locating worker for ${interactionId} from`, workersState);
       if (worker) {
+        log(`Worker located for ${interactionId}`, worker);
         this.clearTimers();
         this.dispatch(new RoutingCompleteEvent(
           interactionId,

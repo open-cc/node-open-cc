@@ -18,7 +18,7 @@ COPY ./packages/api-common/package.json ./packages/api-common/
 COPY ./examples/stasis-app/package.json ./examples/stasis-app/
 COPY ./packages/asterisk-stasis-container/package.json ./packages/asterisk-stasis-container/
 COPY ./packages/core-api/package.json ./packages/core-api/
-RUN npm run lerna:bootstrap -- --production
+RUN npm run lerna:bootstrap
 
 COPY . .
 RUN chmod +x ./docker-entrypoint.sh

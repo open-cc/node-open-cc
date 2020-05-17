@@ -5,12 +5,15 @@ import {
   stasisConnect,
   StasisConnection
 } from '@open-cc/asterisk-stasis-container';
+import * as debug from 'debug';
+
+const log = debug('');
 
 const asteriskURL = (process.env.ASTERISK_URL || 'http://asterisk:8088')
   .replace(/\${([^}]+)}/g, (s, m) => eval(m));
 const asteriskCredentials = process.env.ASTERISK_CREDS || '';
 
-export default async ({router, log} : ApiDeps) => {
+export default async ({router} : ApiDeps) => {
   log('Connecting to', asteriskURL);
 
   const connection : StasisConnection = await stasisConnect({
@@ -28,7 +31,7 @@ export default async ({router, log} : ApiDeps) => {
           try {
             const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
             try {
-              await channel.answer();
+              // await channel.answer();
               new Originate(connection.ari, log, message.endpoint, channel, async () => {
                 await router.send({
                   stream: 'interactions',
@@ -98,7 +101,6 @@ export default async ({router, log} : ApiDeps) => {
       });
     });
     log('StasisStartedEvent', stasisStartEvent);
-    // dialplan: { context: 'stasis-example-stasis-app', exten: '23', priority: 1 },
     await router.send({
       stream: 'interactions',
       partitionKey: connection.asteriskId,
