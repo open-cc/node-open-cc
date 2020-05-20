@@ -34,9 +34,9 @@ export class Worker extends Entity {
     if (address !== this.address) {
       this.dispatch(new WorkerAddressAssignedEvent(address));
     }
-    if (!connected) {
+    if (!connected && this.status !== 'offline') {
       this.dispatch(new WorkerStatusChangedEvent('offline'));
-    } else if (this.status === 'offline') {
+    } else if (connected && this.status === 'offline') {
       this.dispatch(new WorkerStatusChangedEvent('online'));
     }
   }

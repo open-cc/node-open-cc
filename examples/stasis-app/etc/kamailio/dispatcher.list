@@ -1,0 +1,2 @@
+# group  sip addresses of your * units
+1 sip:192.168.188.111:5060 0 0 weight=50

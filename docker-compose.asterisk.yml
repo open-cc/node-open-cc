@@ -10,10 +10,6 @@ services:
       - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
       - "./examples/stasis-app/etc/asterisk/rtp.conf:/etc/asterisk/rtp.conf"
       - "./examples/stasis-app/etc/asterisk/sip.conf:/etc/asterisk/sip.conf"
-    ports:
-      - "5060:5060/tcp"
-      - "5060:5060/udp"
-      - "10001-10100:10001-10100/udp"
     network_mode: host
   stasis_app:
     image: node-open-cc-packages:latest

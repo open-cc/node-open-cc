@@ -67,7 +67,9 @@ export default async ({router} : ApiDeps) => {
           log('Failed to check endpoints', err);
         } else {
           try {
-            await Promise.all(endpoints.map(endpoint => {
+            await Promise.all(endpoints
+              .filter(endpoint => !/^(kamailio|anonymous)$/.test(endpoint.resource))
+              .map(endpoint => {
               const address : string = `${endpoint.technology}/${endpoint.resource}`;
               return router.send({
                 stream: 'workers',

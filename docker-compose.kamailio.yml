@@ -1,0 +1,8 @@
+version: '3'
+services:
+  kamailio:
+    image: kamailio/kamailio:5.2.7-buster
+    volumes:
+    - ./examples/stasis-app/etc/kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg
+    - ./examples/stasis-app/etc/kamailio/dispatcher.list:/etc/kamailio/dispatcher.list
+    network_mode: host
