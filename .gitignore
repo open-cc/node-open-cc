@@ -1,6 +1,7 @@
 *.log
 *.iml
 *.idea
+*scratch*
 node_modules/
 coverage
 dist/

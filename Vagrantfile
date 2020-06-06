@@ -21,6 +21,7 @@ Vagrant.configure(2) do |config|
       vm_config.vm.provider 'virtualbox' do |vb|
         vb.memory = 2048
         vb.cpus = 1
+        vb.customize ['modifyvm', :id, '--nataliasmode1', 'proxyonly']
       end
       vm_config.vm.network 'private_network', ip: machine[:address]
       vm_config.vm.provision :shell, inline: %Q[

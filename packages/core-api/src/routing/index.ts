@@ -44,12 +44,16 @@ export default async ({router, entityRepository} : ApiDeps) => {
         switch (message.name) {
           case 'UpdateWorkerRegistration':
             try {
+              const parts = /^sip:([^@]+)@.*/.exec(message.address);
+              if (parts && parts.length > 0) {
+                message.address = `SIP/cluster/${parts[1]}`;
+              }
               await workerService
                 .updateWorkerRegistration(message.workerId, message.address, message.connected);
+              return {message: `Success`}
             } catch (err) {
               return {message: `Failed to update worker registration - ${err.message}`}
             }
-            break;
           case 'GetWorkers':
             return {workers: workerService.getWorkersState()};
         }

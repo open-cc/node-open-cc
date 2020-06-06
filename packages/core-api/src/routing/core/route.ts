@@ -50,11 +50,14 @@ export class RoutingCancelledEvent extends EntityEvent {
 export class Route extends Entity {
 
   private interactionId : string;
+  private complete : boolean;
 
   constructor(id : string, private workerService : WorkerService) {
     super(id, (self : Route, event : EntityEvent) => {
       if (event instanceof RoutingStartedEvent) {
         this.interactionId = event.interactionId;
+      } else if (event instanceof RoutingCompleteEvent) {
+        this.complete = true;
       }
     });
   }
@@ -70,7 +73,12 @@ export class Route extends Entity {
       const workersState : WorkersState = this.workerService.getWorkersState();
       const worker : WorkerState = Object.keys(workersState)
         .map(id => workersState[id])
-        .filter(worker => worker.status !== 'offline' && worker.address && worker.address !== fromAddress)[0];
+        .filter(worker => {
+          return worker.status &&
+                 worker.status !== 'offline' &&
+                 worker.address &&
+                 this.lastAddressComponent(worker.address) !== this.lastAddressComponent(fromAddress)
+        })[0];
       log(`Locating worker for ${interactionId} from`, workersState);
       if (worker) {
         log(`Worker located for ${interactionId}`, worker);
@@ -85,7 +93,7 @@ export class Route extends Entity {
   }
 
   cancel() {
-    if (this.interactionId) {
+    if (this.interactionId && !this.complete) {
       this.clearTimers();
       this.dispatch(new RoutingCancelledEvent(this.interactionId));
     }
@@ -99,6 +107,10 @@ export class Route extends Entity {
         clearTimeout(timers.shift());
       }
     }
+  }
+
+  private lastAddressComponent(address: string) {
+    return address.split(/\//).pop();
   }
 
 }

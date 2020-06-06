@@ -4,6 +4,9 @@ import {
   init
 } from 'meshage';
 import {
+  httpMessaging
+} from 'meshage/src/messaging/http';
+import {
   EntityEvent,
   entityRepository,
   eventBus,
@@ -13,9 +16,12 @@ import * as path from 'path';
 import * as debug from 'debug';
 import * as proxyquire from 'proxyquire';
 import {Api} from './interfaces';
+import {envProp} from './util';
 
 const services : string[] = (process.env.SERVICES || '').split(/,/);
+const clusterHost : string = envProp(() => process.env.CLUSTER_HOST);
 const clusterPort : any = process.env.CLUSTER_PORT || 9742;
+const clusterNetworks : string[] = process.env.CLUSTER_NETWORKS ? process.env.CLUSTER_NETWORKS.split(',') : ['all'];
 const seeds : string[] = (process.env.SEEDS || '').split(/,/);
 const apiPort : any = process.env.API_PORT || 8080;
 
@@ -23,7 +29,13 @@ const logName : string = 'api-container';
 const log : debug.Debugger = debug(`${logName}:container`);
 
 async function run() {
-  const router : ConnectedMessageRouter = await init(new GrapevineCluster(clusterPort, seeds), apiPort)
+  const router : ConnectedMessageRouter = await init(new GrapevineCluster({
+    address: clusterHost,
+    bindAddress: '0.0.0.0',
+    port: clusterPort,
+    seeds,
+    networks: clusterNetworks
+  }), httpMessaging(`0.0.0.0:${apiPort}`))
     .start();
   eventBus.subscribe(async (event : EntityEvent) => {
     log('Broadcasting', event);
@@ -33,7 +45,6 @@ async function run() {
         partitionKey: '_',
         data: event
       });
-      log('Broadcast event', event);
     } catch (err) {
       log('Failed to broadcast event', event, err);
     }

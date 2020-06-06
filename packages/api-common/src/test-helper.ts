@@ -19,7 +19,6 @@ import {
   clearMemoryEvents
 } from 'ddd-es-node/runtime/in-memory';
 import {LocalEventBus} from 'ddd-es-node/runtime/local-event-bus';
-import * as debug from 'debug';
 
 export const test = async (api : Api) : Promise<ApiDeps> => {
   clearMemoryEvents();
@@ -57,8 +56,7 @@ export const test = async (api : Api) : Promise<ApiDeps> => {
     router,
     eventBus,
     eventStore: memoryEventStore,
-    entityRepository: new BaseEntityRepository(dispatcher, memoryEventStore),
-    log: jest.fn() as any as debug.Debugger
+    entityRepository: new BaseEntityRepository(dispatcher, memoryEventStore)
   };
   await api(deps);
   return deps;

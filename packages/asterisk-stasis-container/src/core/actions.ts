@@ -34,9 +34,7 @@ export class Originate {
     await dialed.originate({
       endpoint: this.endpoint,
       app: 'bridge-dial',
-      appArgs: 'dialed',
-      context: 'default',
-      callerId: 'kamailio'
+      appArgs: 'dialed'
     });
 
     this.ari.start('bridge-dial');

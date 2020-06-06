@@ -29,9 +29,9 @@
     "access": "public"
   },
   "dependencies": {
-    "ddd-es-node": "0.3.99",
+    "ddd-es-node": "0.3.102",
     "debug": "4.1.1",
-    "meshage": "0.3.98",
+    "meshage": "0.3.102",
     "proxyquire": "2.1.3"
   }
 }

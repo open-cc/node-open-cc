@@ -1,4 +1,4 @@
-import {ApiDeps} from '@open-cc/api-common';
+import {ApiDeps, envProp} from '@open-cc/api-common';
 import * as Ari from 'ari-client';
 import {
   Originate,
@@ -9,8 +9,7 @@ import * as debug from 'debug';
 
 const log = debug('');
 
-const asteriskURL = (process.env.ASTERISK_URL || 'http://asterisk:8088')
-  .replace(/\${([^}]+)}/g, (s, m) => eval(m));
+const asteriskURL = envProp(() => process.env.ASTERISK_URL, 'http://asterisk:8088');
 const asteriskCredentials = process.env.ASTERISK_CREDS || '';
 
 export default async ({router} : ApiDeps) => {
@@ -59,62 +58,67 @@ export default async ({router} : ApiDeps) => {
     }
   });
 
-  setInterval(() => {
-    // log('Checking endpoints');
-    connection.ari.endpoints.list(
-      async (err : Error, endpoints : Ari.Endpoint[]) => {
-        if (err) {
-          log('Failed to check endpoints', err);
-        } else {
-          try {
-            await Promise.all(endpoints
-              .filter(endpoint => !/^(kamailio|anonymous)$/.test(endpoint.resource))
-              .map(endpoint => {
-              const address : string = `${endpoint.technology}/${endpoint.resource}`;
-              return router.send({
-                stream: 'workers',
-                partitionKey: connection.asteriskId,
-                data: {
-                  name: 'UpdateWorkerRegistration',
-                  connected: endpoint.state === 'online',
-                  workerId: address,
-                  address,
-                }
-              });
-            }));
-          } catch (err) {
-            log(`Failed to register endpoints - ${err.message}`);
-          }
-        }
-      }
-    );
-  }, 1000);
+  // setInterval(() => {
+  //   connection.ari.endpoints.list(
+  //     async (err : Error, endpoints : Ari.Endpoint[]) => {
+  //       if (err) {
+  //         log('Failed to check endpoints', err);
+  //       } else {
+  //         try {
+  //           await Promise.all(endpoints
+  //             .filter(endpoint => !/^(kamailio|anonymous)$/.test(endpoint.resource))
+  //             .map(endpoint => {
+  //             const address : string = `${endpoint.technology}/cluster/${endpoint.resource}`;
+  //             return router.send({
+  //               stream: 'workers',
+  //               partitionKey: connection.asteriskId,
+  //               data: {
+  //                 name: 'UpdateWorkerRegistration',
+  //                 connected: endpoint.state === 'online',
+  //                 workerId: address,
+  //                 address,
+  //               }
+  //             });
+  //           }));
+  //         } catch (err) {
+  //           log(`Failed to register endpoints - ${err.message}`);
+  //         }
+  //       }
+  //     }
+  //   );
+  // }, 1000);
 
   connection.registerStasisApp('example-stasis-app', async (stasisStartEvent : Ari.StasisStart, channel : Ari.Channel) => {
     log('Started example-stasis-app on', asteriskURL);
-    channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
+    if (channel.caller.number === 'anonymous') {
+      log('Got anonymous call?');
+      await channel.answer();
+    } else {
+      await channel.answer();
+      channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
+        await router.send({
+          stream: 'interactions',
+          partitionKey: connection.asteriskId,
+          data: {
+            interactionId: channel.id,
+            name: 'ended'
+          }
+        });
+      });
+      log('StasisStartedEvent', stasisStartEvent);
       await router.send({
         stream: 'interactions',
         partitionKey: connection.asteriskId,
         data: {
+          name: 'started',
+          source: stasisStartEvent.channel.name + '-' + stasisStartEvent.application,
+          channel: 'voice',
           interactionId: channel.id,
-          name: 'ended'
+          fromAddress: `SIP/${channel.caller.number}`,
+          toAddress: stasisStartEvent.channel.dialplan.exten
         }
       });
-    });
-    log('StasisStartedEvent', stasisStartEvent);
-    await router.send({
-      stream: 'interactions',
-      partitionKey: connection.asteriskId,
-      data: {
-        name: 'started',
-        source: stasisStartEvent.channel.name + '-' + stasisStartEvent.application,
-        channel: 'voice',
-        interactionId: channel.id,
-        fromAddress: `PJSIP/${channel.caller.number}`,
-        toAddress: stasisStartEvent.channel.dialplan.exten
-      }
-    });
+    }
   });
 
 };

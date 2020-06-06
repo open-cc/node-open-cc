@@ -7,7 +7,7 @@ services:
       - "./examples/stasis-app/etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
       - "./examples/stasis-app/etc/asterisk/http.conf:/etc/asterisk/http.conf"
       - "./examples/stasis-app/etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
-      - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
+      # - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
       - "./examples/stasis-app/etc/asterisk/rtp.conf:/etc/asterisk/rtp.conf"
       - "./examples/stasis-app/etc/asterisk/sip.conf:/etc/asterisk/sip.conf"
     network_mode: host
@@ -17,22 +17,26 @@ services:
     environment:
       - SERVICES=/opt/app/examples/stasis-app/src/index.ts
       - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
-      # - ASTERISK_URL=http://asterisk:8088
       - ASTERISK_CREDS=ariUser:ariPassword
+      - SEEDS=192.168.188.110:9742
+      - CLUSTER_HOST=192.168.188.111
+      - CLUSTER_NETWORKS=kamailionet,statisappnet
       - DEBUG=api-container:*
-    ports:
-      - "8080:8080"
     depends_on:
       - asterisk
+    ports:
+      - 9742:9742
   interaction_api:
     image: node-open-cc-packages:latest
     environment:
       - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
-      - SEEDS=stasis_app:9742
+      - CLUSTER_NETWORKS=statisappnet
+      - SEEDS=192.168.188.111:9742
       - DEBUG=api-container:*
   routing_api:
     image: node-open-cc-packages:latest
     environment:
       - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
-      - SEEDS=stasis_app:9742
+      - CLUSTER_NETWORKS=statisappnet
+      - SEEDS=192.168.188.111:9742
       - DEBUG=api-container:*

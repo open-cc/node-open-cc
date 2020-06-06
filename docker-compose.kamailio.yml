@@ -6,3 +6,15 @@ services:
     - ./examples/stasis-app/etc/kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg
     - ./examples/stasis-app/etc/kamailio/dispatcher.list:/etc/kamailio/dispatcher.list
     network_mode: host
+  kamailio-agent:
+    image: node-open-cc-packages:latest
+    build: .
+    environment:
+      - SERVICES=/opt/app/packages/kamailio-agent/index.ts
+      - KAMAILIO_URL=http://192.168.188.110:5060
+      - CLUSTER_HOST=192.168.188.110
+      - CLUSTER_NETWORKS=kamailionet
+      - DEBUG=api-container:*
+    depends_on:
+      - kamailio
+    network_mode: host
