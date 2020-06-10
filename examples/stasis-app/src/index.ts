@@ -32,6 +32,14 @@ export default async ({router} : ApiDeps) => {
             try {
               // await channel.answer();
               new Originate(connection.ari, log, message.endpoint, channel, async () => {
+
+                const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${message.interactionId}-ring-play`});
+                if (ringPlay) {
+                  await ringPlay.stop();
+                } else {
+                  log('ring playback not found');
+                }
+
                 await router.send({
                   stream: 'interactions',
                   partitionKey: connection.asteriskId,
@@ -51,6 +59,12 @@ export default async ({router} : ApiDeps) => {
           break;
         }
         case 'RoutingFailedEvent':
+          const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${message.interactionId}-ring-play`});
+          if (ringPlay) {
+            await ringPlay.stop();
+          } else {
+            log('ring playback not found');
+          }
           const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
           await channel.hangup();
           break;
@@ -95,16 +109,24 @@ export default async ({router} : ApiDeps) => {
       await channel.answer();
     } else {
       await channel.answer();
-      channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
-        await router.send({
-          stream: 'interactions',
-          partitionKey: connection.asteriskId,
-          data: {
-            interactionId: channel.id,
-            name: 'ended'
-          }
+      try {
+        await channel.playWithId({
+          playbackId: `${channel.id}-ring-play`,
+          media: 'tone:ring'
         });
-      });
+        channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
+          await router.send({
+            stream: 'interactions',
+            partitionKey: connection.asteriskId,
+            data: {
+              interactionId: channel.id,
+              name: 'ended'
+            }
+          });
+        });
+      } catch (err) {
+        log('Playback failed of ring', err);
+      }
       log('StasisStartedEvent', stasisStartEvent);
       await router.send({
         stream: 'interactions',

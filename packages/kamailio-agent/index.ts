@@ -52,10 +52,6 @@ async function delay(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
 }
 
-// getContacts('http://192.168.188.110:5060/RPC')
-//   .then(contacts => console.log(contacts))
-//   .catch(err => console.log(err))
-
 export default async ({router} : ApiDeps) => {
 
   async function notifyWorkerStatus() {
