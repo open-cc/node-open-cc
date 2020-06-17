@@ -10,6 +10,27 @@ export class InteractionEvent extends EntityEvent {
   }
 }
 
+export class ExternalInteractionInitiatedEvent extends InteractionEvent {
+  constructor(public readonly interactionId: string,
+              public readonly channel : string,
+              public readonly fromAddress : string,
+              public readonly toAddress : string) {
+    super();
+  }
+}
+
+export class ExternalInteractionEndedEvent extends InteractionEvent {
+  constructor(public readonly interactionId: string) {
+    super();
+  }
+}
+
+export class ExternalInteractionAnsweredEvent extends InteractionEvent {
+  constructor(public readonly interactionId: string, public readonly endpoint: string) {
+    super();
+  }
+}
+
 export class InteractionInitiatedEvent extends InteractionEvent {
   constructor(public readonly channel : string) {
     super();

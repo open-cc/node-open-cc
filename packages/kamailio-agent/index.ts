@@ -4,6 +4,7 @@ import {
 } from '@open-cc/api-common';
 import fetch from 'node-fetch';
 import * as debug from 'debug';
+import {UpdateWorkerRegistration} from '@open-cc/core-api';
 
 const log = debug('');
 const kamailioBaseUrl = envProp(() => process.env.KAMAILIO_URL, 'http://kamailio:5060');
@@ -11,7 +12,7 @@ const kamailioRpcEndpoint = `${kamailioBaseUrl}/RPC`;
 const isRunning = true;
 
 const contactsCache = {};
-let prevContacts = {};
+let prevContacts = [];
 
 async function getContacts(rpcEndpoint) {
   const res = await fetch(rpcEndpoint, {
@@ -52,16 +53,20 @@ async function delay(ms) {
   return new Promise(resolve => setTimeout(() => resolve(), ms));
 }
 
-export default async ({router} : ApiDeps) => {
+function contactAddresses(contacts) {
+  return contacts.map(contact => contact.Contact.Address);
+}
+
+export default async ({stream} : ApiDeps) => {
 
   async function notifyWorkerStatus() {
     try {
       const contacts = await getContacts(kamailioRpcEndpoint);
-      if (JSON.stringify(contacts) == JSON.stringify(prevContacts)) {
+      if (JSON.stringify(contactAddresses(contacts)) == JSON.stringify(contactAddresses(prevContacts))) {
         return;
       }
-      log('Got contacts', JSON.stringify(contacts, null, 2));
       prevContacts = contacts;
+      log('Got contacts', JSON.stringify(contacts, null, 2));
       const removeContacts = [];
       for (const contact of contacts) {
         contactsCache[contact.Contact.Address] = {
@@ -69,22 +74,21 @@ export default async ({router} : ApiDeps) => {
           active: true
         };
       }
-      for (const contactKey of Object.keys(contactsCache)) {
-        const cachedContact = contactsCache[contactKey];
-        await router.broadcast({
-          stream: 'workers',
-          partitionKey: '_',
-          data: {
-            name: 'UpdateWorkerRegistration',
+      await stream('workers').broadcast(new UpdateWorkerRegistration(Object.keys(contactsCache)
+        .map((contactsCacheKey) => {
+          const cachedContact = contactsCache[contactsCacheKey]
+          if (!cachedContact.active) {
+            removeContacts.push(contactsCacheKey);
+          }
+          return cachedContact;
+        })
+        .map((cachedContact) => {
+          return {
             connected: cachedContact.active,
             workerId: cachedContact.Address,
             address: cachedContact.Address
           }
-        });
-        if (!cachedContact.active) {
-          removeContacts.push(contactKey);
-        }
-      }
+        })));
       for (const removeContact of removeContacts) {
         delete contactsCache[removeContact];
       }

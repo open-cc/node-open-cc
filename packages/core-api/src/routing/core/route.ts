@@ -52,6 +52,10 @@ export class Route extends Entity {
   private interactionId : string;
   private complete : boolean;
 
+  private static getLastAddressComponent(address: string) {
+    return address.split(/\//).pop();
+  }
+
   constructor(id : string, private workerService : WorkerService) {
     super(id, (self : Route, event : EntityEvent) => {
       if (event instanceof RoutingStartedEvent) {
@@ -62,7 +66,7 @@ export class Route extends Entity {
     });
   }
 
-  routeInteraction(interactionId : string, fromAddress : string,
+  public routeInteraction(interactionId : string, fromAddress : string,
                    waitInterval : number = 1000,
                    waitTimeout : number = 10000) {
     const timeout : NodeJS.Timer = setTimeout(() => {
@@ -77,7 +81,7 @@ export class Route extends Entity {
           return worker.status &&
                  worker.status !== 'offline' &&
                  worker.address &&
-                 this.lastAddressComponent(worker.address) !== this.lastAddressComponent(fromAddress)
+                 Route.getLastAddressComponent(worker.address) !== Route.getLastAddressComponent(fromAddress)
         })[0];
       log(`Locating worker for ${interactionId} from`, workersState);
       if (worker) {
@@ -92,7 +96,7 @@ export class Route extends Entity {
     this.dispatch(new RoutingStartedEvent(interactionId));
   }
 
-  cancel() {
+  public cancel() {
     if (this.interactionId && !this.complete) {
       this.clearTimers();
       this.dispatch(new RoutingCancelledEvent(this.interactionId));
@@ -107,10 +111,6 @@ export class Route extends Entity {
         clearTimeout(timers.shift());
       }
     }
-  }
-
-  private lastAddressComponent(address: string) {
-    return address.split(/\//).pop();
   }
 
 }

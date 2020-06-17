@@ -1,7 +1,9 @@
 import {
   Api,
-  ApiDeps
+  ApiDeps,
+  Stream
 } from './interfaces';
+import {ApiRegBound, StreamBound} from './server';
 import {
   ConnectedMessageRouter,
   HandlerRegistration,
@@ -11,16 +13,36 @@ import {
 import {
   BaseEntityRepository,
   EntityEvent,
+  EntityRepository,
+  EventBus,
   EventDispatcher,
+  EventStore,
 } from 'ddd-es-node';
 import {
+  clearMemoryEvents,
   createMemoryEventDispatcher,
-  memoryEventStore,
-  clearMemoryEvents
+  memoryEventStore
 } from 'ddd-es-node/runtime/in-memory';
 import {LocalEventBus} from 'ddd-es-node/runtime/local-event-bus';
 
-export const test = async (api : Api) : Promise<ApiDeps> => {
+export interface TestApiDeps extends ApiDeps {
+  router: ConnectedMessageRouter;
+  eventStore: EventStore;
+}
+
+class TestApiReg extends ApiRegBound implements TestApiDeps {
+  constructor(entityRepository : EntityRepository,
+              eventBus : EventBus,
+              router : ConnectedMessageRouter,
+              public eventStore : EventStore) {
+    super(entityRepository, eventBus, router);
+  }
+  public stream(stream : string) : Stream {
+    return new StreamBound(stream, this);
+  }
+}
+
+export const test = async (api : Api) : Promise<TestApiDeps> => {
   clearMemoryEvents();
   const eventBus : LocalEventBus = new LocalEventBus(memoryEventStore);
   const dispatcher : EventDispatcher = createMemoryEventDispatcher(eventBus);
@@ -40,24 +62,19 @@ export const test = async (api : Api) : Promise<ApiDeps> => {
     })
   };
   eventBus.subscribe(async (event : EntityEvent) => {
-    //log('broadcasting', event);
     try {
       await router.broadcast({
         stream: 'events',
         partitionKey: '_',
         data: JSON.parse(JSON.stringify(event))
       });
-      //log('broadcast event', event);
     } catch (err) {
-      //log('failed to broadcast event', event, err);
+      // ignore?
     }
   });
-  const deps : ApiDeps = {
-    router,
-    eventBus,
-    eventStore: memoryEventStore,
-    entityRepository: new BaseEntityRepository(dispatcher, memoryEventStore)
-  };
+  const deps : TestApiReg = new TestApiReg(new BaseEntityRepository(dispatcher, memoryEventStore), eventBus, router, memoryEventStore);
+  deps.stream = deps.stream.bind(deps);
   await api(deps);
+  await deps.register(router);
   return deps;
 };

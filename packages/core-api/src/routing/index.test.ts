@@ -1,39 +1,41 @@
 import api, {workerService} from './';
 import {
-  ApiDeps,
-  test
+  test,
+  TestApiDeps
 } from '@open-cc/api-common';
-import {ConnectedMessageRouter} from 'meshage';
 
 describe('router-api', () => {
-  let router : ConnectedMessageRouter;
+  let apiDeps : TestApiDeps;
   beforeEach(async () => {
-    const apiDeps : ApiDeps = await test(api);
-    router = apiDeps.router;
+    apiDeps = await test(api);
   });
   it('tracks worker state', async () => {
-    await router.send({
+    await apiDeps.router.send({
       stream: 'workers',
       partitionKey: 'thePartitionKey',
       data: {
         name: 'UpdateWorkerRegistration',
-        workerId: 'worker1002',
-        address: 'SIP/1002',
-        connected: true
+        registrations: [{
+          workerId: 'worker1002',
+          address: 'SIP/1002',
+          connected: true
+        }]
       }
     });
     await wait(1);
     expect(workerService.getWorkersState()['worker1002']).toBeDefined();
     expect(workerService.getWorkersState()['worker1002'].address).toBe('SIP/1002');
     expect(workerService.getWorkersState()['worker1002'].status).toBe('online');
-    await router.send({
+    await apiDeps.router.send({
       stream: 'workers',
       partitionKey: 'thePartitionKey',
       data: {
         name: 'UpdateWorkerRegistration',
-        workerId: 'worker1002',
-        address: 'SIP/1002',
-        connected: false
+        registrations: [{
+          workerId: 'worker1002',
+          address: 'SIP/1002',
+          connected: false
+        }]
       }
     });
     await wait(1);
@@ -41,19 +43,21 @@ describe('router-api', () => {
   });
   it('routes', async () => {
     setTimeout(async () => {
-      await router.send({
+      await apiDeps.router.send({
         stream: 'workers',
         partitionKey: 'thePartitionKey',
         data: {
           name: 'UpdateWorkerRegistration',
-          workerId: 'worker1002',
-          address: 'SIP/1002',
-          connected: true
+          registrations: [{
+            workerId: 'worker1002',
+            address: 'SIP/1002',
+            connected: true
+          }]
         }
       });
     }, 100);
     await wait(21);
-    await router.send({
+    await apiDeps.router.send({
       stream: 'events',
       partitionKey: 'thePartitionKey',
       data: {
@@ -65,7 +69,7 @@ describe('router-api', () => {
       }
     });
     await wait(101);
-    expect(router.broadcast).toHaveBeenCalledWith({
+    expect(apiDeps.router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
       partitionKey: '_',
       data: expect.objectContaining({
@@ -73,7 +77,7 @@ describe('router-api', () => {
         streamId: '123'
       })
     });
-    expect(router.broadcast).toHaveBeenCalledWith({
+    expect(apiDeps.router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
       partitionKey: '_',
       data: expect.objectContaining({
@@ -81,7 +85,7 @@ describe('router-api', () => {
         streamId: '123'
       })
     });
-    expect(router.broadcast).toHaveBeenCalledWith({
+    expect(apiDeps.router.broadcast).toHaveBeenCalledWith({
       stream: 'events',
       partitionKey: '_',
       data: expect.objectContaining({

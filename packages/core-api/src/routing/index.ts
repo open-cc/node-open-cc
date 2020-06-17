@@ -1,5 +1,9 @@
 import {ApiDeps} from '@open-cc/api-common';
-import {WorkerService} from './core/worker';
+import {
+  CallInitiatedEvent,
+  InteractionEndedEvent
+} from '../';
+import {WorkerService, UpdateWorkerRegistration} from './core/worker';
 import {Route} from './core/route';
 import * as debug from 'debug';
 
@@ -7,58 +11,50 @@ const log = debug('');
 
 export let workerService : WorkerService;
 
-export default async ({router, entityRepository} : ApiDeps) => {
+export default async ({stream, entityRepository} : ApiDeps) => {
 
   workerService = new WorkerService(entityRepository);
 
-  await router.register(
-    {
-      stream: 'events',
-      messageHandler: async (message : any) => {
-        workerService.handleMessage(message);
-        switch (message.name) {
-          case 'CallInitiatedEvent': {
-            log(`Received CallInitiatedEvent: routing interaction ${message.streamId}`, message);
-            const route : Route = await entityRepository
-              .load(Route, message.streamId, workerService);
-            await route.routeInteraction(
-              message.streamId,
-              message.fromAddress,
-              message.waitInterval,
-              message.waitTimeout);
-          }
-            break;
-          case 'InteractionEndedEvent': {
-            log(`Received InteractionEndedEvent for ${message.streamId}`);
-            const route : Route = await entityRepository
-              .load(Route, message.streamId, workerService);
-            await route.cancel();
-            break;
-          }
-        }
-      }
-    },
-    {
-      stream: 'workers',
-      messageHandler: async (message : any) => {
-        switch (message.name) {
-          case 'UpdateWorkerRegistration':
-            try {
-              const parts = /^sip:([^@]+)@.*/.exec(message.address);
-              if (parts && parts.length > 0) {
-                message.address = `SIP/cluster/${parts[1]}`;
-              }
-              await workerService
-                .updateWorkerRegistration(message.workerId, message.address, message.connected);
-              return {message: `Success`}
-            } catch (err) {
-              return {message: `Failed to update worker registration - ${err.message}`}
+  stream('events')
+    .on('before', async (event : any) => {
+      workerService.handleMessage(event);
+    })
+    .on(CallInitiatedEvent, async (event : CallInitiatedEvent) => {
+      log(`Received CallInitiatedEvent: routing interaction ${event.streamId}`, event);
+      const route : Route = await entityRepository
+        .load(Route, event.streamId, workerService);
+      await route.routeInteraction(
+        event.streamId,
+        event.fromAddress,
+        (event as any).waitInterval,
+        (event as any).waitTimeout);
+    })
+    .on(InteractionEndedEvent, async (event : InteractionEndedEvent) => {
+      log(`Received InteractionEndedEvent for ${event.streamId}`);
+      const route : Route = await entityRepository
+        .load(Route, event.streamId, workerService);
+      await route.cancel();
+    });
+
+  stream('workers')
+    .on(UpdateWorkerRegistration, async (message : UpdateWorkerRegistration) => {
+      try {
+        await Promise.all((message.registrations || [])
+          .map((registration) => {
+            const parts = /^sip:([^@]+)@.*/.exec(registration.address);
+            if (parts && parts.length > 0) {
+              registration.address = `SIP/cluster/${parts[1]}`;
             }
-          case 'GetWorkers':
-            return {workers: workerService.getWorkersState()};
-        }
-        return {message: `Unknown message: ${message.name}`};
+            return workerService
+              .updateWorkerRegistration(registration.workerId, registration.address, registration.connected);
+          }));
+        return {message: 'Success'}
+      } catch (err) {
+        return {message: `Failed to update worker registration - ${err.message}`}
       }
+    })
+    .on('GetWorkers', () => {
+      return {workers: workerService.getWorkersState()};
     });
 
 };

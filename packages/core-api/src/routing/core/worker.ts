@@ -4,6 +4,16 @@ import {
   EntityRepository
 } from 'ddd-es-node';
 
+export class UpdateWorkerRegistration {
+  public name: string = 'UpdateWorkerRegistration';
+  constructor (public readonly registrations: Array<{
+    workerId: string,
+    address: string,
+    connected: boolean
+  }>) {
+  }
+}
+
 export class WorkerAddressAssignedEvent extends EntityEvent {
   constructor(public readonly address : string) {
     super();

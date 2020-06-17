@@ -26,6 +26,7 @@
     "access": "public"
   },
   "dependencies": {
-    "@open-cc/api-common": "^0.0.0"
+    "@open-cc/api-common": "^0.0.0",
+    "@open-cc/core-api": "^0.0.0"
   }
 }

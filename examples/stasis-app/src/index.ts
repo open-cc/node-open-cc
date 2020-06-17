@@ -1,10 +1,18 @@
-import {ApiDeps, envProp} from '@open-cc/api-common';
+import {
+  ApiDeps,
+  envProp
+} from '@open-cc/api-common';
 import * as Ari from 'ari-client';
 import {
   Originate,
   stasisConnect,
   StasisConnection
 } from '@open-cc/asterisk-stasis-container';
+import {
+  ExternalInteractionInitiatedEvent,
+  ExternalInteractionEndedEvent,
+  ExternalInteractionAnsweredEvent
+} from '@open-cc/core-api';
 import * as debug from 'debug';
 
 const log = debug('');
@@ -12,7 +20,7 @@ const log = debug('');
 const asteriskURL = envProp(() => process.env.ASTERISK_URL, 'http://asterisk:8088');
 const asteriskCredentials = process.env.ASTERISK_CREDS || '';
 
-export default async ({router} : ApiDeps) => {
+export default async ({stream} : ApiDeps) => {
   log('Connecting to', asteriskURL);
 
   const connection : StasisConnection = await stasisConnect({
@@ -22,55 +30,42 @@ export default async ({router} : ApiDeps) => {
     log: log.extend('stasis')
   });
 
-  await router.register({
-    stream: 'events',
-    messageHandler: async (message : any) => {
-      switch (message.name) {
-        case 'RoutingCompleteEvent': {
-          try {
-            const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
-            try {
-              // await channel.answer();
-              new Originate(connection.ari, log, message.endpoint, channel, async () => {
-
-                const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${message.interactionId}-ring-play`});
-                if (ringPlay) {
-                  await ringPlay.stop();
-                } else {
-                  log('ring playback not found');
-                }
-
-                await router.send({
-                  stream: 'interactions',
-                  partitionKey: connection.asteriskId,
-                  data: {
-                    name: 'answered',
-                    interactionId: message.interactionId,
-                    endpoint: message.endpoint
-                  }
-                });
-              }).execute();
-            } catch (err) {
-              log('Error answering incoming call', err);
+  stream('events')
+    .on('RoutingCompleteEvent', async (event : any) => {
+      try {
+        const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
+        try {
+          // await channel.answer();
+          new Originate(connection.ari, log, event.endpoint, channel, async () => {
+            const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
+            if (ringPlay) {
+              await ringPlay.stop();
+            } else {
+              log('ring playback not found');
             }
-          } catch (err) {
-            log(`Channel ${message.interactionId} not found`);
-          }
-          break;
+            await stream('interactions')
+              .send(connection.asteriskId,
+                new ExternalInteractionAnsweredEvent(
+                  event.interactionId,
+                  event.endpoint));
+          }).execute();
+        } catch (err) {
+          log('Error answering incoming call', err);
         }
-        case 'RoutingFailedEvent':
-          const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${message.interactionId}-ring-play`});
-          if (ringPlay) {
-            await ringPlay.stop();
-          } else {
-            log('ring playback not found');
-          }
-          const channel : Ari.Channel = await connection.ari.channels.get({channelId: message.interactionId});
-          await channel.hangup();
-          break;
+      } catch (err) {
+        log(`Channel ${event.interactionId} not found`);
       }
-    }
-  });
+    })
+    .on('RoutingFailedEvent', async (event : any) => {
+      const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
+      if (ringPlay) {
+        await ringPlay.stop();
+      } else {
+        log('ring playback not found');
+      }
+      const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
+      await channel.hangup();
+    });
 
   // setInterval(() => {
   //   connection.ari.endpoints.list(
@@ -115,31 +110,20 @@ export default async ({router} : ApiDeps) => {
           media: 'tone:ring'
         });
         channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
-          await router.send({
-            stream: 'interactions',
-            partitionKey: connection.asteriskId,
-            data: {
-              interactionId: channel.id,
-              name: 'ended'
-            }
-          });
+          await stream('interactions')
+            .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
         });
       } catch (err) {
         log('Playback failed of ring', err);
       }
       log('StasisStartedEvent', stasisStartEvent);
-      await router.send({
-        stream: 'interactions',
-        partitionKey: connection.asteriskId,
-        data: {
-          name: 'started',
-          source: stasisStartEvent.channel.name + '-' + stasisStartEvent.application,
-          channel: 'voice',
-          interactionId: channel.id,
-          fromAddress: `SIP/${channel.caller.number}`,
-          toAddress: stasisStartEvent.channel.dialplan.exten
-        }
-      });
+      await stream('interactions')
+        .send(connection.asteriskId,
+          await new ExternalInteractionInitiatedEvent(
+            channel.id,
+            'voice',
+            `SIP/${channel.caller.number}`,
+            stasisStartEvent.channel.dialplan.exten));
     }
   });
 

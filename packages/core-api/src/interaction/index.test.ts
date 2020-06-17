@@ -1,11 +1,14 @@
 import api from './';
-import {ApiDeps, test} from '@open-cc/api-common';
-import {ConnectedMessageRouter} from 'meshage';
+import {
+  ConnectedMessageRouter,
+  test,
+  TestApiDeps
+} from '@open-cc/api-common';
 
 describe('interaction-api', () => {
   let router : ConnectedMessageRouter;
   beforeEach(async () => {
-    const apiDeps : ApiDeps = await test(api);
+    const apiDeps : TestApiDeps = await test(api);
     router = apiDeps.router;
   });
   it('initiates calls', async () => {
