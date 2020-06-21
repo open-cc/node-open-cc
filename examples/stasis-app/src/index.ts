@@ -35,7 +35,12 @@ export default async ({stream} : ApiDeps) => {
       try {
         const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
         try {
-          new Originate(connection.ari, log, event.endpoint, channel, async () => {
+          let routingEndpoint : string = event.endpoint;
+          const parts = /^sip:([^@]+)@.*/.exec(routingEndpoint);
+          if (parts && parts.length > 0) {
+            routingEndpoint = `SIP/cluster/${parts[1]}`;
+          }
+          new Originate(connection.ari, log, routingEndpoint, channel, async () => {
             const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
             if (ringPlay) {
               await ringPlay.stop();
@@ -46,7 +51,7 @@ export default async ({stream} : ApiDeps) => {
               .send(connection.asteriskId,
                 new ExternalInteractionAnsweredEvent(
                   event.interactionId,
-                  event.endpoint));
+                  routingEndpoint));
           }).execute();
         } catch (err) {
           log('Error answering incoming call', err);

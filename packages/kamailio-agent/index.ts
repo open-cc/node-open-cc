@@ -57,6 +57,18 @@ function contactAddresses(contacts) {
   return contacts.map(contact => contact.Contact.Address);
 }
 
+function parseAddress(address) {
+  const matcher = /^([^:]+):([^@]+)@(.*)$/.exec(address);
+  if (matcher) {
+    return {
+      protocol: matcher[1],
+      user: matcher[2],
+      domain: matcher[3]
+    }
+  }
+  throw new Error(`Failed to parse address '${address}'`);
+}
+
 export default async ({stream} : ApiDeps) => {
 
   async function notifyWorkerStatus() {
@@ -85,7 +97,7 @@ export default async ({stream} : ApiDeps) => {
         .map((cachedContact) => {
           return {
             connected: cachedContact.active,
-            workerId: cachedContact.Address,
+            workerId: parseAddress(cachedContact.Address).user,
             address: cachedContact.Address
           }
         })));

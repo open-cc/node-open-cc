@@ -1,9 +1,13 @@
-import {ApiDeps} from '@open-cc/api-common';
+import {ApiDeps, MessageHeader} from '@open-cc/api-common';
 import {
   CallInitiatedEvent,
   InteractionEndedEvent
 } from '../';
-import {WorkerService, UpdateWorkerRegistration} from './core/worker';
+import {
+  UpdateWorkerRegistration,
+  WorkerService,
+  WorkerState
+} from './core/worker';
 import {Route} from './core/route';
 import * as debug from 'debug';
 
@@ -41,10 +45,6 @@ export default async ({stream, entityRepository} : ApiDeps) => {
       try {
         await Promise.all((message.registrations || [])
           .map((registration) => {
-            const parts = /^sip:([^@]+)@.*/.exec(registration.address);
-            if (parts && parts.length > 0) {
-              registration.address = `SIP/cluster/${parts[1]}`;
-            }
             return workerService
               .updateWorkerRegistration(registration.workerId, registration.address, registration.connected);
           }));
@@ -55,6 +55,10 @@ export default async ({stream, entityRepository} : ApiDeps) => {
     })
     .on('GetWorkers', () => {
       return {workers: workerService.getWorkersState()};
+    })
+    .on('GetWorkerAddress', async (message: any, header: MessageHeader) => {
+      const workerState : WorkerState = workerService.getWorkersState()[header.partitionKey];
+      return workerState ? workerState.address : 'none';
     });
 
 };
