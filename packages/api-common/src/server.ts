@@ -6,11 +6,10 @@ import {
 } from 'meshage';
 import {httpMessaging} from 'meshage/src/messaging/http';
 import {
+  defaultEsContext,
   EntityEvent,
-  entityRepository,
   EntityRepository,
-  EventBus,
-  eventBus,
+  EventBus
 } from 'ddd-es-node';
 import * as path from 'path';
 import * as debug from 'debug';
@@ -114,6 +113,7 @@ async function run() {
     networks: clusterNetworks
   }), httpMessaging(`0.0.0.0:${apiPort}`))
     .start();
+  const { eventBus, entityRepository } = defaultEsContext;
   eventBus.subscribe(async (event : EntityEvent, isReplaying : boolean) => {
     if (!isReplaying) {
       log('Broadcasting', event);

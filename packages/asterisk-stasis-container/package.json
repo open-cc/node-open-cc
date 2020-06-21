@@ -33,6 +33,6 @@
   "devDependencies": {
     "@types/ari-client": "2.2.1",
     "@types/node-fetch": "2.1.6",
-    "debug": "4.1.1"
+    "debug": "3.2.6"
   }
 }

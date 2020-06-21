@@ -4,6 +4,10 @@ import {
   test,
   TestApiDeps
 } from '@open-cc/api-common';
+import {
+  ExternalInteractionInitiatedEvent,
+  ExternalInteractionEndedEvent
+} from './core/interaction';
 
 describe('interaction-api', () => {
   let router : ConnectedMessageRouter;
@@ -15,13 +19,11 @@ describe('interaction-api', () => {
     await router.send({
       stream: 'interactions',
       partitionKey: '123',
-      data: {
-        name: 'started',
-        interactionId: '123',
-        channel: 'voice',
-        fromAddress: '+15555555555',
-        toAddress: '+15555555554'
-      }
+      data: new ExternalInteractionInitiatedEvent(
+        '123',
+        'voice',
+        '+15555555555',
+        '+15555555554')
     });
     await wait(1);
     expect(router.broadcast).toHaveBeenCalledWith({
@@ -36,10 +38,7 @@ describe('interaction-api', () => {
     await router.send({
       stream: 'interactions',
       partitionKey: '123',
-      data: {
-        name: 'ended',
-        interactionId: '123'
-      }
+      data: new ExternalInteractionEndedEvent('123')
     });
     await wait(1);
     expect(router.broadcast).toHaveBeenCalledWith({
@@ -54,13 +53,11 @@ describe('interaction-api', () => {
     await router.send({
       stream: 'interactions',
       partitionKey: '123',
-      data: {
-        name: 'started',
-        interactionId: '123',
-        channel: 'voice',
-        fromAddress: '+15555555555',
-        toAddress: '+15555555554'
-      }
+      data: new ExternalInteractionInitiatedEvent(
+        '123',
+        'voice',
+        '+15555555551',
+        '+15555555554')
     });
     await wait(1);
     const res = await router.send({
@@ -70,7 +67,7 @@ describe('interaction-api', () => {
         name: 'get'
       }
     });
-    expect(res[0].fromAddress).toBe('+15555555555');
+    expect(res[0].fromAddress).toBe('+15555555551');
   });
 });
 

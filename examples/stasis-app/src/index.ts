@@ -35,7 +35,6 @@ export default async ({stream} : ApiDeps) => {
       try {
         const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
         try {
-          // await channel.answer();
           new Originate(connection.ari, log, event.endpoint, channel, async () => {
             const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
             if (ringPlay) {

@@ -17,13 +17,9 @@ import {
   EventBus,
   EventDispatcher,
   EventStore,
+  EsContext,
+  MemoryEventStore
 } from 'ddd-es-node';
-import {
-  clearMemoryEvents,
-  createMemoryEventDispatcher,
-  memoryEventStore
-} from 'ddd-es-node/runtime/in-memory';
-import {LocalEventBus} from 'ddd-es-node/runtime/local-event-bus';
 
 export interface TestApiDeps extends ApiDeps {
   router: ConnectedMessageRouter;
@@ -43,9 +39,10 @@ class TestApiReg extends ApiRegBound implements TestApiDeps {
 }
 
 export const test = async (api : Api) : Promise<TestApiDeps> => {
-  clearMemoryEvents();
-  const eventBus : LocalEventBus = new LocalEventBus(memoryEventStore);
-  const dispatcher : EventDispatcher = createMemoryEventDispatcher(eventBus);
+  const memoryEventStore : MemoryEventStore = new MemoryEventStore();
+  const esContext : EsContext = new EsContext(memoryEventStore);
+  const eventBus : EventBus = esContext.eventBus;
+  const dispatcher : EventDispatcher = esContext.eventDispatcher;
   const handlers : { [stream : string] : MessageHandler } = {};
   const router : ConnectedMessageRouter = {
     register: function (...registrations: HandlerRegistration[]) : Promise<void> {

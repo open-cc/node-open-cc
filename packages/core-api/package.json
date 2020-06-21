@@ -27,6 +27,6 @@
   },
   "dependencies": {
     "@open-cc/api-common": "^0.0.0",
-    "ddd-es-node": "0.3.102"
+    "ddd-es-node": "0.3.106"
   }
 }

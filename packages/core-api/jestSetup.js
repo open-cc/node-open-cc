@@ -1,5 +1,4 @@
 const BaseEntityRepository = require('ddd-es-node').BaseEntityRepository;
-require('ddd-es-node').testMode(true);
 const expect = require('expect');
 
 global.withEventStore = callback => {
