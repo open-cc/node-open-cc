@@ -1,7 +1,8 @@
 version: '3'
 services:
   asterisk:
-    image: andrius/asterisk:alpine_glibc-16.3.0
+    image: node-open-cc-asterisk:latest
+    build: ./examples/stasis-app
     volumes:
       - "./examples/stasis-app/etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
       - "./examples/stasis-app/etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
@@ -10,6 +11,9 @@ services:
       # - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
       - "./examples/stasis-app/etc/asterisk/rtp.conf:/etc/asterisk/rtp.conf"
       - "./examples/stasis-app/etc/asterisk/sip.conf:/etc/asterisk/sip.conf"
+      - "./examples/stasis-app/etc/asterisk/musiconhold.conf:/etc/asterisk/musiconhold.conf"
+    environment:
+      - MOH_STREAM=http://146.71.124.10:8100/stream
     network_mode: host
   stasis_app:
     image: node-open-cc-packages:latest
@@ -33,6 +37,8 @@ services:
       - CLUSTER_NETWORKS=statisappnet
       - SEEDS=192.168.188.111:9742
       - DEBUG=api-container:*
+    ports:
+      - 8080:8080
   routing_api:
     image: node-open-cc-packages:latest
     environment:

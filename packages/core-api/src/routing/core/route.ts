@@ -68,7 +68,7 @@ export class Route extends Entity {
 
   public routeInteraction(interactionId : string, fromAddress : string,
                    waitInterval : number = 1000,
-                   waitTimeout : number = 10000) {
+                   waitTimeout : number = 60000) {
     const timeout : NodeJS.Timer = setTimeout(() => {
         this.dispatch(new RoutingFailedEvent(interactionId));
     }, waitTimeout);
