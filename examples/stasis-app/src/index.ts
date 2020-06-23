@@ -9,9 +9,12 @@ import {
   StasisConnection
 } from '@open-cc/asterisk-stasis-container';
 import {
-  ExternalInteractionInitiatedEvent,
+  CallInitiatedEvent,
+  ExternalInteractionAnsweredEvent,
   ExternalInteractionEndedEvent,
-  ExternalInteractionAnsweredEvent
+  ExternalInteractionInitiatedEvent,
+  RoutingCompleteEvent,
+  RoutingFailedEvent
 } from '@open-cc/core-api';
 import * as debug from 'debug';
 
@@ -31,7 +34,15 @@ export default async ({stream} : ApiDeps) => {
   });
 
   stream('events')
-    .on('RoutingCompleteEvent', async (event : any) => {
+    .on(CallInitiatedEvent, async (event : CallInitiatedEvent) => {
+      // try {
+      //   const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.streamId});
+      //   const bridge = connection.ari.Bridge(event.streamId);
+      //   await bridge.createWithId({type: 'mixing'});
+      //   bridge.addChannel({channel: [channel.id]});
+      // }
+    })
+    .on(RoutingCompleteEvent, async (event : RoutingCompleteEvent) => {
       try {
         const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
         try {
@@ -60,7 +71,7 @@ export default async ({stream} : ApiDeps) => {
         log(`Channel ${event.interactionId} not found`);
       }
     })
-    .on('RoutingFailedEvent', async (event : any) => {
+    .on(RoutingFailedEvent, async (event : RoutingFailedEvent) => {
       const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
       if (ringPlay) {
         await ringPlay.stop();
@@ -70,36 +81,6 @@ export default async ({stream} : ApiDeps) => {
       const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
       await channel.hangup();
     });
-
-  // setInterval(() => {
-  //   connection.ari.endpoints.list(
-  //     async (err : Error, endpoints : Ari.Endpoint[]) => {
-  //       if (err) {
-  //         log('Failed to check endpoints', err);
-  //       } else {
-  //         try {
-  //           await Promise.all(endpoints
-  //             .filter(endpoint => !/^(kamailio|anonymous)$/.test(endpoint.resource))
-  //             .map(endpoint => {
-  //             const address : string = `${endpoint.technology}/cluster/${endpoint.resource}`;
-  //             return router.send({
-  //               stream: 'workers',
-  //               partitionKey: connection.asteriskId,
-  //               data: {
-  //                 name: 'UpdateWorkerRegistration',
-  //                 connected: endpoint.state === 'online',
-  //                 workerId: address,
-  //                 address,
-  //               }
-  //             });
-  //           }));
-  //         } catch (err) {
-  //           log(`Failed to register endpoints - ${err.message}`);
-  //         }
-  //       }
-  //     }
-  //   );
-  // }, 1000);
 
   connection.registerStasisApp('example-stasis-app', async (stasisStartEvent : Ari.StasisStart, channel : Ari.Channel) => {
     log('Started example-stasis-app on', asteriskURL);
