@@ -9,11 +9,33 @@ import {UpdateWorkerRegistration} from '@open-cc/core-api';
 const log = debug('');
 const kamailioBaseUrl = envProp(() => process.env.KAMAILIO_URL, 'http://kamailio:5060');
 const kamailioRpcEndpoint = `${kamailioBaseUrl}/RPC`;
-const isRunning = true;
+
+const dispatcherDestinations = [];
+async function updateDispatcherList(rpcEndpoint, destination) {
+  if (dispatcherDestinations.indexOf(destination) === -1) {
+    dispatcherDestinations.push(destination);
+    log('updateDispatcherList', dispatcherDestinations);
+    const newDispatcherList = dispatcherDestinations
+      .map((server, index) => `${index + 1} ${server} 0 0 weight=50`)
+      .join('\n');
+    const res = await fetch(rpcEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: '2.0',
+        method: 'dispatcher_list.update',
+        dispatcher_list: newDispatcherList
+      })
+    });
+    log('updateDispatcherList status', res.status);
+  }
+}
 
 const contactsCache = {};
 let prevContacts = [];
-
 async function getContacts(rpcEndpoint) {
   const res = await fetch(rpcEndpoint, {
     method: 'POST',
@@ -49,10 +71,6 @@ async function getContacts(rpcEndpoint) {
   return [];
 }
 
-async function delay(ms) {
-  return new Promise(resolve => setTimeout(() => resolve(), ms));
-}
-
 function contactAddresses(contacts) {
   return contacts.map(contact => contact.Contact.Address);
 }
@@ -70,6 +88,11 @@ function parseAddress(address) {
 }
 
 export default async ({stream} : ApiDeps) => {
+
+  stream('dispatcherlist')
+    .on('DestinationReported', async (message : any) => {
+      await updateDispatcherList(kamailioRpcEndpoint, message.address);
+    });
 
   async function notifyWorkerStatus() {
     try {
@@ -112,9 +135,14 @@ export default async ({stream} : ApiDeps) => {
     }
   }
 
-  while (isRunning) {
-    await delay(1000);
-    await notifyWorkerStatus();
-  }
+  process.nextTick(() => {
+    const next = () => {
+      setTimeout(async () => {
+        await notifyWorkerStatus();
+        next();
+      }, 1000);
+    };
+    next();
+  });
 
 };

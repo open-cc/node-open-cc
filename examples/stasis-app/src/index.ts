@@ -6,7 +6,7 @@ import * as Ari from 'ari-client';
 import {
   stasisConnect,
   StasisConnection
-} from '@open-cc/asterisk-stasis-container';
+} from '@open-cc/asterisk-ari-connector';
 import {
   CallInitiatedEvent,
   ExternalInteractionAnsweredEvent,
@@ -32,6 +32,22 @@ export default async ({stream} : ApiDeps) => {
     log: log.extend('stasis')
   });
 
+  setInterval(async () => {
+    if (process.env.DISPATCH_ADDRESS) {
+      try {
+        await stream('dispatcherlist')
+          .broadcast({
+            name: 'DestinationReported',
+            address: process.env.DISPATCH_ADDRESS
+          });
+      } catch (err) {
+        if (!/no matching service/i.test(err.message || '')) {
+          throw err;
+        }
+      }
+    }
+  }, 1000);
+
   async function hangupChannel(channel : Ari.Channel, message : string) {
     log(message);
     try {
@@ -45,8 +61,8 @@ export default async ({stream} : ApiDeps) => {
     .on(CallInitiatedEvent, async (event : CallInitiatedEvent) => {
       try {
         const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.streamId});
-        const bridge = connection.ari.Bridge(event.streamId);
-        await bridge.createWithId({type: 'mixing'});
+        const bridge = await connection.ari.Bridge(event.streamId)
+          .createWithId({type: 'mixing'});
         log(`Created bridge ${bridge.id}`);
         await bridge.addChannel({channel: [channel.id]});
         await channel.startMoh();
@@ -121,34 +137,6 @@ export default async ({stream} : ApiDeps) => {
       });
 
       connection.ari.start('bridge-dial');
-
-      // try {
-      //   const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
-      //   try {
-      //     let routingEndpoint : string = event.endpoint;
-      //     const parts = /^sip:([^@]+)@.*/.exec(routingEndpoint);
-      //     if (parts && parts.length > 0) {
-      //       routingEndpoint = `SIP/cluster/${parts[1]}`;
-      //     }
-      //     new Originate(connection.ari, log, routingEndpoint, channel, async () => {
-      //       const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});
-      //       if (ringPlay) {
-      //         await ringPlay.stop();
-      //       } else {
-      //         log('ring playback not found');
-      //       }
-      //       await stream('interactions')
-      //         .send(connection.asteriskId,
-      //           new ExternalInteractionAnsweredEvent(
-      //             event.interactionId,
-      //             routingEndpoint));
-      //     }).execute();
-      //   } catch (err) {
-      //     log('Error answering incoming call', err);
-      //   }
-      // } catch (err) {
-      //   log(`Channel ${event.interactionId} not found`);
-      // }
     })
     .on(RoutingFailedEvent, async (event : RoutingFailedEvent) => {
       const ringPlay : Ari.Playback = await connection.ari.playbacks.get({playbackId: `${event.interactionId}-ring-play`});

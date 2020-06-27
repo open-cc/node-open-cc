@@ -24,6 +24,7 @@ services:
       - ASTERISK_CREDS=ariUser:ariPassword
       - SEEDS=192.168.188.110:9742
       - CLUSTER_HOST=192.168.188.111
+      - DISPATCH_ADDRESS=sip:192.168.188.111:5060
       - CLUSTER_NETWORKS=kamailionet,statisappnet
       - DEBUG=api-container:*
     depends_on:

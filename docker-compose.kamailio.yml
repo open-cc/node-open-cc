@@ -1,10 +1,10 @@
 version: '3'
 services:
   kamailio:
-    image: kamailio/kamailio:5.2.7-buster
+    image: node-open-cc-kamailio-proxy:latest
+    build: ./packages/kamailio-proxy
     volumes:
-    - ./examples/stasis-app/etc/kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg
-    - ./examples/stasis-app/etc/kamailio/dispatcher.list:/etc/kamailio/dispatcher.list
+    - ./packages/kamailio-proxy/files/etc/kamailio/kamailio.cfg:/etc/kamailio/kamailio.cfg
     network_mode: host
   kamailio-agent:
     image: node-open-cc-packages:latest

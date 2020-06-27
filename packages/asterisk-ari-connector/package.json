@@ -1,7 +1,7 @@
 {
-  "name": "@open-cc/asterisk-stasis-container",
+  "name": "@open-cc/asterisk-ari-connector",
   "version": "0.0.0",
-  "description": "A container for asterisk stasis applications",
+  "description": "Connector for asterisk ari",
   "main": "./src/index",
   "scripts": {
     "test": "jest",

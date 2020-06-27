@@ -92,6 +92,7 @@ export class ApiRegBound implements ApiDeps {
         }
       }
     });
+    log(`Registered handlers: [${registrations.map((reg) => reg.stream).join(', ')}]`)
     await router.register(...registrations);
   }
   private async invokeHandler(stream : string, name: string, data : any, header : MessageHeader) {
@@ -129,7 +130,7 @@ async function run() {
     }
   }, {replay: true});
   for (const service of services) {
-    log(`Loading service ${service}`);
+    log(`Registering service ${service}`);
     const logNamespace = `${logName}:${path.basename(path.dirname(service))}`;
     const logger = debug(logNamespace);
     const debugProxy = (namespace) => {
@@ -144,8 +145,8 @@ async function run() {
     const api : Api = <Api>(typeof required === 'function' ? required : required.default);
     await api(apiReg);
     await apiReg.register(router);
+    log(`Registration complete ${service}`);
   }
-  log(`Loaded service ${services}`);
 }
 
 run()

@@ -1,5 +1,6 @@
 *Dockerfile*
 *docker-compose*
+*.gliffy
 .git
 .idea
 .vagrant

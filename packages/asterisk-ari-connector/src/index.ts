@@ -1,17 +1,17 @@
 import * as Ari from 'ari-client';
+import {
+  AsteriskPing,
+  StasisStart
+} from 'ari-client';
 import * as debug from 'debug';
 import fetch from 'node-fetch';
 import {
   StasisAppHandler,
-  StasisContainerConfig,
-  StasisConnection
+  StasisConnection,
+  StasisContainerConfig
 } from './core/interfaces';
-import {StasisStart} from "ari-client";
-import {AsteriskPing} from "ari-client";
 
 export * from './core/interfaces';
-
-export * from './core/actions';
 
 const log : debug.Debugger = debug('asterisk-stasis-container');
 
@@ -55,7 +55,7 @@ export async function stasisConnect(config : StasisContainerConfig) : Promise<St
               } else {
                 config.log(`Connected to ${config.url}`);
                 ari.asterisk.ping()
-                  .then((asteriskPing: AsteriskPing) => {
+                  .then((asteriskPing : AsteriskPing) => {
                     const stasisConnection : StasisConnection = {
                       asteriskId: asteriskPing.asterisk_id,
                       ari,
