@@ -27,9 +27,9 @@ export type ConstructorOf<T> = new (...args: any[]) => T;
 export interface Stream {
   on<T>(name : (string | ConstructorOf<T>), handler : MessageHandler<T>) : Stream;
 
-  broadcast(message : any);
+  broadcast<T>(message : any) : Promise<T[]>;
 
-  send(partitionKey: string, message : any);
+  send<T>(partitionKey: string, message : any) : Promise<T>;
 }
 
 export interface Api {

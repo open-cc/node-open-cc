@@ -51,12 +51,12 @@ export class StreamBound implements Stream {
     return this;
   }
 
-  async broadcast<T>(message : any): Promise<T> {
+  async broadcast<T>(message : any): Promise<T[]> {
     return (await this.apiReg.router.broadcast({
       stream: this.stream,
       partitionKey: '_',
       data: message
-    }) as any as T);
+    }) as any as T[]);
   }
 
   async send<T>(partitionKey: string, message : any): Promise<T> {
