@@ -46,7 +46,11 @@ export default async ({stream, entityRepository} : ApiDeps) => {
         await Promise.all((message.registrations || [])
           .map((registration) => {
             return workerService
-              .updateWorkerRegistration(registration.workerId, registration.address, registration.connected);
+              .updateWorkerRegistration(
+                  registration.workerId,
+                  registration.address,
+                  registration.routingAddress,
+                  registration.connected);
           }));
         return {message: 'Success'}
       } catch (err) {

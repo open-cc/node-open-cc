@@ -73,9 +73,9 @@ export default async ({stream} : ApiDeps) => {
     .on(RoutingCompleteEvent, async (event : RoutingCompleteEvent) => {
 
       let routingEndpoint : string = event.endpoint;
-      const parts = /^sip:([^@]+)@.*/.exec(routingEndpoint);
+      const parts = /^sip:([^@]+)@(.*)/.exec(routingEndpoint);
       if (parts && parts.length > 0) {
-        routingEndpoint = `SIP/cluster/${parts[1]}`;
+        routingEndpoint = `SIP/${parts[2]}/${parts[1]}`;
       }
 
       log('Routing to endpoint', routingEndpoint);
@@ -156,18 +156,10 @@ export default async ({stream} : ApiDeps) => {
       await channel.answer();
     } else {
       await channel.answer();
-      try {
-        // await channel.playWithId({
-        //   playbackId: `${channel.id}-ring-play`,
-        //   media: 'tone:ring'
-        // });
-        channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
-          await stream('interactions')
-            .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
-        });
-      } catch (err) {
-        log('Playback failed of ring', err);
-      }
+      channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
+        await stream('interactions')
+          .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
+      });
       log('StasisStartedEvent', stasisStartEvent);
       await stream('interactions')
         .send(connection.asteriskId,

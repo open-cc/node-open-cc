@@ -1,20 +1,21 @@
 {
   "license": "MIT",
   "scripts": {
-    "lerna:bootstrap": "lerna bootstrap",
+    "lerna:bootstrap": "lerna bootstrap && link-parent-bin",
     "lerna:clean": "lerna clean --yes",
     "build": "lerna run build --stream",
     "test": "lerna run test --stream"
   },
   "devDependencies": {
-    "babel-core": "6.26.3",
-    "babel-preset-env": "1.7.0",
     "@types/debug": "4.1.2",
     "@types/jest": "^24.0.9",
     "@types/node": "^8.0.17",
+    "babel-core": "6.26.3",
     "babel-jest": "^20.0.3",
+    "babel-preset-env": "1.7.0",
     "jest": "23.6.0",
     "lerna": "3.21.0",
+    "link-parent-bin": "^1.0.2",
     "ts-jest": "^23.10.5",
     "tsutils": "~2.7.1",
     "typescript": "3.9.2"

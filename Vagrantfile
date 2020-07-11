@@ -9,13 +9,28 @@ Vagrant.configure(2) do |config|
     :name => 'kamailio-1',
     :role => 'kamailio',
     :address => '192.168.188.110'
-  },{
+  }, {
     :name => 'asterisk-1',
     :role => 'asterisk',
     :address => '192.168.188.111'
   }]
 
   machines.each do |machine|
+
+    machines_by_role = machines
+      .map { |m| m[:role] }
+      .uniq
+      .reduce([]) { |by_role, role|
+        by_role << {
+          :role => role
+            .upcase
+            .gsub(/[^a-z0-9]+/i, '_'),
+          :machines => machines
+            .select { |m| m[:role] == role }
+            .select { |m| m[:name] != machine[:name] } }
+        by_role
+      }
+
     config.vm.define machine[:name] do |vm_config|
       vm_config.vm.hostname = machine[:name]
       vm_config.vm.provider 'virtualbox' do |vb|
@@ -38,10 +53,24 @@ if ! which docker-compose >> /dev/null; then
   sudo chmod +x /usr/local/bin/docker-compose
 fi
 sudo sed -i'' '/# vagranthosts/,$d' /etc/hosts
-sudo echo $'# vagranthosts\\n#{machines.select { |m| m[:name] != machine[:name] }.map { |m| "#{m[:address]} #{m[:name]}\\n" }.join(" ")}' >> /etc/hosts
-sudo echo $'#!/usr/bin/env bash\\ncd /project\ndocker-compose -f docker-compose.#{machine[:role]}.yml $@' > /usr/local/bin/dc
+sudo echo $'# vagranthosts\n#{machines
+        .select { |m| m[:name] != machine[:name] }
+        .map { |m| "#{m[:address]} #{m[:name]}\\n" }
+        .join(" ")}' >> /etc/hosts
+sudo echo '#!/usr/bin/env bash' > /usr/local/bin/dc
+sudo echo $'#{machines
+        .select { |m| m[:name] == machine[:name] }
+        .map { |m| "export PRIVATE_IPV4=#{m[:address]}" }
+        .join('\\n')}' >> /usr/local/bin/dc
+sudo echo $'#{machines
+        .map { |m| "export #{m[:name].upcase.gsub(/[^a-z0-9]+/i, '_')}_PRIVATE_IPV4=#{m[:address]}" }
+        .join('\\n')}' >> /usr/local/bin/dc
+sudo echo $'#{machines_by_role
+        .map { |r| "export #{r[:role]}_PRIVATE_IPV4=#{r[:machines].map { |m| m[:address] }.join(' ')}" }.join('\\n')}' >> /usr/local/bin/dc
+sudo echo $'#{machines_by_role
+        .map { |r| "export #{r[:role]}_PEERS=#{r[:machines].map { |m| "#{m[:address]}:9742" }.join(',')}" }.join('\\n')}' >> /usr/local/bin/dc
+sudo echo $'cd /project\ndocker-compose -f docker-compose.#{machine[:role]}.yml $@' >> /usr/local/bin/dc
 sudo chmod +x /usr/local/bin/dc
-dc up -d
 ]
     end
   end

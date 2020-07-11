@@ -2,18 +2,10 @@ version: '3'
 services:
   asterisk:
     image: node-open-cc-asterisk:latest
-    build: ./examples/stasis-app
-    volumes:
-      - "./examples/stasis-app/etc/asterisk/ari.conf:/etc/asterisk/ari.conf"
-      - "./examples/stasis-app/etc/asterisk/extensions.conf:/etc/asterisk/extensions.conf"
-      - "./examples/stasis-app/etc/asterisk/http.conf:/etc/asterisk/http.conf"
-      - "./examples/stasis-app/etc/asterisk/modules.conf:/etc/asterisk/modules.conf"
-      # - "./examples/stasis-app/etc/asterisk/pjsip.conf:/etc/asterisk/pjsip.conf"
-      - "./examples/stasis-app/etc/asterisk/rtp.conf:/etc/asterisk/rtp.conf"
-      - "./examples/stasis-app/etc/asterisk/sip.conf:/etc/asterisk/sip.conf"
-      - "./examples/stasis-app/etc/asterisk/musiconhold.conf:/etc/asterisk/musiconhold.conf"
+    build: ./packages/asterisk
     environment:
       - MOH_STREAM=http://146.71.124.10:8100/stream
+      - SIP_PROXY_IPV4=${KAMAILIO_PRIVATE_IPV4}
     network_mode: host
   stasis_app:
     image: node-open-cc-packages:latest
@@ -22,9 +14,9 @@ services:
       - SERVICES=/opt/app/examples/stasis-app/src/index.ts
       - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
       - ASTERISK_CREDS=ariUser:ariPassword
-      - SEEDS=192.168.188.110:9742
-      - CLUSTER_HOST=192.168.188.111
-      - DISPATCH_ADDRESS=sip:192.168.188.111:5060
+      - SEEDS=${KAMAILIO_PEERS}
+      - CLUSTER_HOST=${PRIVATE_IPV4}
+      - DISPATCH_ADDRESS=sip:${PRIVATE_IPV4}:5060
       - CLUSTER_NETWORKS=kamailionet,statisappnet
       - DEBUG=api-container:*
     depends_on:
@@ -36,7 +28,7 @@ services:
     environment:
       - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
       - CLUSTER_NETWORKS=statisappnet
-      - SEEDS=192.168.188.111:9742
+      - SEEDS=${PRIVATE_IPV4}:9742
       - DEBUG=api-container:*
     ports:
       - 8080:8080
@@ -45,5 +37,5 @@ services:
     environment:
       - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
       - CLUSTER_NETWORKS=statisappnet
-      - SEEDS=192.168.188.111:9742
+      - SEEDS=${PRIVATE_IPV4}:9742
       - DEBUG=api-container:*

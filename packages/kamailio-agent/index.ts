@@ -76,12 +76,13 @@ function contactAddresses(contacts) {
 }
 
 function parseAddress(address) {
-  const matcher = /^([^:]+):([^@]+)@(.*)$/.exec(address);
+  const matcher = /^([^:]+):(([^@]+)@)?([^:]+)(:([0-9]+))?/.exec(address);
   if (matcher) {
     return {
       protocol: matcher[1],
-      user: matcher[2],
-      domain: matcher[3]
+      user: matcher[3],
+      domain: matcher[4],
+      port: matcher[6] || 5060
     }
   }
   throw new Error(`Failed to parse address '${address}'`);
@@ -118,10 +119,13 @@ export default async ({stream} : ApiDeps) => {
           return cachedContact;
         })
         .map((cachedContact) => {
+          const address = parseAddress(cachedContact.Address);
+          const proxy = parseAddress(cachedContact.Socket);
           return {
             connected: cachedContact.active,
-            workerId: parseAddress(cachedContact.Address).user,
-            address: cachedContact.Address
+            workerId: address.user,
+            address: `${address.protocol}:${address.user}@${address.domain}:${address.port}`,
+            routingAddress: `${address.protocol}:${address.user}@${proxy.domain}:${proxy.port}`
           }
         })));
       for (const removeContact of removeContacts) {

@@ -9,12 +9,19 @@ export class UpdateWorkerRegistration {
   constructor (public readonly registrations: Array<{
     workerId: string,
     address: string,
+    routingAddress?: string,
     connected: boolean
   }>) {
   }
 }
 
 export class WorkerAddressAssignedEvent extends EntityEvent {
+  constructor(public readonly address : string) {
+    super();
+  }
+}
+
+export class WorkerRoutingAddressAssignedEvent extends EntityEvent {
   constructor(public readonly address : string) {
     super();
   }
@@ -28,21 +35,30 @@ export class WorkerStatusChangedEvent extends EntityEvent {
 
 export class Worker extends Entity {
   private address : string;
+  private routingAddress : string;
   private status : string = 'offline';
 
   constructor(id : string) {
     super(id, (self, event) => {
       if (event instanceof WorkerAddressAssignedEvent) {
         this.address = event.address;
+      } else if (event instanceof WorkerRoutingAddressAssignedEvent) {
+        this.routingAddress = event.address;
       } else if (event instanceof WorkerStatusChangedEvent) {
         this.status = event.status;
       }
     });
   }
 
-  updateRegistration(address : string, connected : boolean) {
+  updateRegistration(address : string, routingAddress : string, connected : boolean) {
     if (address !== this.address) {
       this.dispatch(new WorkerAddressAssignedEvent(address));
+    }
+    if (!routingAddress && address) {
+      routingAddress = address;
+    }
+    if (routingAddress !== this.routingAddress) {
+      this.dispatch(new WorkerRoutingAddressAssignedEvent(routingAddress));
     }
     if (!connected && this.status !== 'offline') {
       this.dispatch(new WorkerStatusChangedEvent('offline'));
@@ -54,6 +70,7 @@ export class Worker extends Entity {
 
 export interface WorkerState {
   address? : string;
+  routingAddress? : string;
   status? : string;
 }
 
@@ -76,6 +93,12 @@ export class WorkerService {
         this.workers[message.streamId].address = event.address;
         break;
       }
+      case 'WorkerRoutingAddressAssignedEvent': {
+        const event : WorkerRoutingAddressAssignedEvent = <WorkerRoutingAddressAssignedEvent>message;
+        this.workers[message.streamId] = this.workers[message.streamId] || {};
+        this.workers[message.streamId].routingAddress = event.address;
+        break;
+      }
       case 'WorkerStatusChangedEvent': {
         const event : WorkerStatusChangedEvent = <WorkerStatusChangedEvent>message;
         this.workers[message.streamId] = this.workers[message.streamId] || {};
@@ -89,8 +112,11 @@ export class WorkerService {
     return this.workers;
   }
 
-  async updateWorkerRegistration(workerId : string, address : string, connection : boolean) {
+  async updateWorkerRegistration(workerId : string,
+                                 address : string,
+                                 routingAddress : string,
+                                 connection : boolean) {
     const worker : Worker = await this.entityRepository.load(Worker, workerId);
-    worker.updateRegistration(address, connection);
+    worker.updateRegistration(address, routingAddress, connection);
   }
 }

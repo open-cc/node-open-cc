@@ -11,8 +11,8 @@ services:
     build: .
     environment:
       - SERVICES=/opt/app/packages/kamailio-agent/index.ts
-      - KAMAILIO_URL=http://192.168.188.110:5060
-      - CLUSTER_HOST=192.168.188.110
+      - KAMAILIO_URL=http://${PRIVATE_IPV4}:5060
+      - CLUSTER_HOST=${PRIVATE_IPV4}
       - CLUSTER_NETWORKS=kamailionet
       - DEBUG=api-container:*
     depends_on:

@@ -80,8 +80,8 @@ export class Route extends Entity {
         .filter(worker => {
           return worker.status &&
                  worker.status !== 'offline' &&
-                 worker.address &&
-                 Route.getLastAddressComponent(worker.address) !== Route.getLastAddressComponent(fromAddress)
+                 worker.routingAddress &&
+                 Route.getLastAddressComponent(worker.routingAddress) !== Route.getLastAddressComponent(fromAddress)
         })[0];
       log(`Locating worker for ${interactionId} from`, workersState);
       if (worker) {
@@ -89,7 +89,7 @@ export class Route extends Entity {
         this.clearTimers();
         this.dispatch(new RoutingCompleteEvent(
           interactionId,
-          worker.address));
+          worker.routingAddress));
       }
     }, waitInterval);
     timerState[interactionId] = [timeout, timer];
