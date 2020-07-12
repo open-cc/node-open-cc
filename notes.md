@@ -44,12 +44,14 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] create kamailio-proxy dockerfile
 - [x] add mechanism to update cluster friend config in sip.conf
 - [ ] integrate logic from example-stasis-app as generic capability
-- [ ] determine which things should be externally configured in asterisk - e.g. certain ari.conf settings
+- [x] determine which things should be externally configured in asterisk - e.g. certain ari.conf settings
+- [x] external configuration of rtp ports
 - [ ] cleanup dispatcher list setup so it handles if kamailio restarted
 - [ ] cleanup dispatcher list setup so it detects dead destinations
 - [ ] auto-register twilio trunk + number
     - [ ]  auto-ngrok setup for local dev env
 - [ ] terraform provisioning and scaling controller
+- [ ] integrate lets encrypt
 - [ ] fix stale message nodes causing timeouts
     - [ ] set timeouts and mark instances as down
     - [ ] failover to other instances

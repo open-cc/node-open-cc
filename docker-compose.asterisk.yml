@@ -6,6 +6,8 @@ services:
     environment:
       - MOH_STREAM=http://146.71.124.10:8100/stream
       - SIP_PROXY_IPV4=${KAMAILIO_PRIVATE_IPV4}
+      - ARI_PASSWORD=${MACHINE_KEY}
+      - RTP_PORTS=10001-10100
     network_mode: host
   stasis_app:
     image: node-open-cc-packages:latest
@@ -13,7 +15,7 @@ services:
     environment:
       - SERVICES=/opt/app/examples/stasis-app/src/index.ts
       - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
-      - ASTERISK_CREDS=ariUser:ariPassword
+      - ASTERISK_CREDS=ariUser:${MACHINE_KEY}
       - SEEDS=${KAMAILIO_PEERS}
       - CLUSTER_HOST=${PRIVATE_IPV4}
       - DISPATCH_ADDRESS=sip:${PRIVATE_IPV4}:5060

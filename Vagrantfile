@@ -17,6 +17,8 @@ Vagrant.configure(2) do |config|
 
   machines.each do |machine|
 
+    machine[:key] = Array.new(32){[*'a'..'z', *'0'..'0'].sample}.join
+
     machines_by_role = machines
       .map { |m| m[:role] }
       .uniq
@@ -58,6 +60,7 @@ sudo echo $'# vagranthosts\n#{machines
         .map { |m| "#{m[:address]} #{m[:name]}\\n" }
         .join(" ")}' >> /etc/hosts
 sudo echo '#!/usr/bin/env bash' > /usr/local/bin/dc
+sudo echo 'export MACHINE_KEY="#{machine[:key]}"' >> /usr/local/bin/dc
 sudo echo $'#{machines
         .select { |m| m[:name] == machine[:name] }
         .map { |m| "export PRIVATE_IPV4=#{m[:address]}" }
