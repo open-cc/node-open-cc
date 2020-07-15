@@ -1,72 +1,60 @@
 import api from './';
 import {
-  ConnectedMessageRouter,
   test,
   TestApiDeps
 } from '@open-cc/api-common';
 import {
-  ExternalInteractionInitiatedEvent,
-  ExternalInteractionEndedEvent
+  ExternalInteractionEndedEvent,
+  ExternalInteractionInitiatedEvent
 } from './core/interaction';
 
 describe('interaction-api', () => {
-  let router : ConnectedMessageRouter;
+  let apiDeps : TestApiDeps;
   beforeEach(async () => {
-    const apiDeps : TestApiDeps = await test(api);
-    router = apiDeps.router;
+    apiDeps = await test(api);
+  }, 20000);
+  afterEach(async () => {
+    await apiDeps.shutdown();
   });
   it('initiates calls', async () => {
-    await router.send({
-      stream: 'interactions',
-      partitionKey: '123',
-      data: new ExternalInteractionInitiatedEvent(
+    await apiDeps
+      .stream('interactions')
+      .send('123', new ExternalInteractionInitiatedEvent(
         '123',
         'voice',
         '+15555555555',
-        '+15555555554')
-    });
+        '+15555555554'));
     await wait(1);
-    expect(router.broadcast).toHaveBeenCalledWith({
-      stream: 'events',
-      partitionKey: '_',
-      data: expect.objectContaining({
+    expect(apiDeps
+      .eventFired)
+      .toHaveBeenCalledWith(expect.objectContaining({
         name: 'CallInitiatedEvent'
-      })
-    });
+      }));
   });
   it('ends calls', async () => {
-    await router.send({
-      stream: 'interactions',
-      partitionKey: '123',
-      data: new ExternalInteractionEndedEvent('123')
-    });
+    await apiDeps
+      .stream('interactions')
+      .send('123', new ExternalInteractionEndedEvent('123'));
     await wait(1);
-    expect(router.broadcast).toHaveBeenCalledWith({
-      stream: 'events',
-      partitionKey: '_',
-      data: expect.objectContaining({
+    expect(apiDeps.eventFired)
+      .toHaveBeenCalledWith(expect.objectContaining({
         name: 'InteractionEndedEvent'
-      })
-    });
+      }));
   });
   it('gets interactions', async () => {
-    await router.send({
-      stream: 'interactions',
-      partitionKey: '123',
-      data: new ExternalInteractionInitiatedEvent(
+    await apiDeps
+      .stream('interactions')
+      .send('123', new ExternalInteractionInitiatedEvent(
         '123',
         'voice',
         '+15555555551',
-        '+15555555554')
-    });
+        '+15555555554'));
     await wait(1);
-    const res = await router.send({
-      stream: 'interactions',
-      partitionKey: '',
-      data: {
+    const res = await apiDeps
+      .stream('interactions')
+      .send('', {
         name: 'get'
-      }
-    });
+      });
     expect(res[0].fromAddress).toBe('+15555555551');
   });
 });

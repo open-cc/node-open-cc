@@ -32,10 +32,12 @@ sip:23@192.168.188.110
 # apis
 ```shell script
 curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services
-curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers/123 -d '{"name":"GetWorkers"}' | jq
-curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers/123 -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "123", "address": "SIP/cluster/123" }]}'
-curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/interactions/get --data '{"name":"get"}' | jq
-curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/123 --data '{"name":"started","interactionId":"1234","channel":"voice"}' | jq
+curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services | jq '.[] | "\(.stream) \(.endpoints[0].description)"'
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"GetWorkers"}' | jq
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"GetWorkerAddress","workerId":"1002"}'
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers/1002 -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
+curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/interactions --data '{"name":"get"}' | jq
+curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/1234 --data '{"name":"started","interactionId":"1234","channel":"voice"}' | jq
 ```
 
 # todo

@@ -1,4 +1,4 @@
-import {ApiDeps, MessageHeader} from '@open-cc/api-common';
+import {ApiDeps} from '@open-cc/api-common';
 import {
   CallInitiatedEvent,
   InteractionEndedEvent
@@ -60,8 +60,8 @@ export default async ({stream, entityRepository} : ApiDeps) => {
     .on('GetWorkers', () => {
       return {workers: workerService.getWorkersState()};
     })
-    .on('GetWorkerAddress', async (message: any, header: MessageHeader) => {
-      const workerState : WorkerState = workerService.getWorkersState()[header.partitionKey];
+    .on('GetWorkerAddress', async ({workerId}) => {
+      const workerState : WorkerState = workerService.getWorkersState()[workerId];
       return workerState ? workerState.address : 'none';
     });
 

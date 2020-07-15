@@ -5,7 +5,6 @@ module.exports = {
     "^.+\\.js$": 'babel-jest',
     "^.+\\.ts$": 'ts-jest'
   },
-  setupFiles: ['<rootDir>/jestSetup.js'],
   globals: {
     'ts-jest': {
       diagnostics: {

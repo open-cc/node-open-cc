@@ -4,7 +4,7 @@
   "description": "core routing and interactions api",
   "main": "src/index",
   "scripts": {
-    "test": "jest",
+    "test": "JEST_CIRCUS=1 jest",
     "prepublishOnly": "npm run test"
   },
   "repository": {

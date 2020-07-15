@@ -9,4 +9,4 @@ if [[ -z "${HOSTS_HOSTNAME}" ]]; then
   export HOSTS_HOSTNAME="${HOST_DOCKER_INTERNAL}"
 fi
 
-${SCRIPTPATH}/node_modules/.bin/ts-node --project ${SCRIPTPATH}/docker-tsconfig.json ${SCRIPTPATH}/packages/api-common/src/server.ts
+${SCRIPTPATH}/node_modules/.bin/ts-node --project ${SCRIPTPATH}/docker-tsconfig.json ${SCRIPTPATH}/packages/api-common/src/server-run.ts
