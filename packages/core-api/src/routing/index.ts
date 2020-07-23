@@ -1,6 +1,5 @@
 import {ApiDeps} from '@open-cc/api-common';
 import {
-  CallInitiatedEvent,
   InteractionEndedEvent
 } from '../';
 import {
@@ -8,7 +7,10 @@ import {
   WorkerService,
   WorkerState
 } from './core/worker';
-import {Route} from './core/route';
+import {
+  BeginRoutingCommand,
+  Route
+} from './core/route';
 import * as debug from 'debug';
 
 const log = debug('');
@@ -23,21 +25,23 @@ export default async ({stream, entityRepository} : ApiDeps) => {
     .on('before', async (event : any) => {
       workerService.handleMessage(event);
     })
-    .on(CallInitiatedEvent, async (event : CallInitiatedEvent) => {
-      log(`Received CallInitiatedEvent: routing interaction ${event.streamId}`, event);
-      const route : Route = await entityRepository
-        .load(Route, event.streamId, workerService);
-      await route.routeInteraction(
-        event.streamId,
-        event.fromAddress,
-        (event as any).waitInterval,
-        (event as any).waitTimeout);
-    })
     .on(InteractionEndedEvent, async (event : InteractionEndedEvent) => {
       log(`Received InteractionEndedEvent for ${event.streamId}`);
       const route : Route = await entityRepository
         .load(Route, event.streamId, workerService);
       await route.cancel();
+    });
+
+  stream('routing')
+    .on('BeginRouting', async (command : BeginRoutingCommand) => {
+      log(`Received ${command.name}: routing interaction ${command.streamId}`, command);
+      const route : Route = await entityRepository
+        .load(Route, command.streamId, workerService);
+      await route.routeInteraction(
+        command.streamId,
+        command.fromAddress,
+        command.waitInterval,
+        command.waitTimeout);
     });
 
   stream('workers')

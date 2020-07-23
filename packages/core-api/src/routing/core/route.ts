@@ -17,6 +17,14 @@ interface TimerState {
 
 const timerState : TimerState = {};
 
+export interface BeginRoutingCommand {
+  name: string;
+  streamId: string;
+  fromAddress: string;
+  waitInterval: number;
+  waitTimeout: number;
+}
+
 export class RoutingStartedEvent extends EntityEvent {
   constructor(public readonly interactionId: string) {
     super();

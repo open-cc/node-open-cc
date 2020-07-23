@@ -1,0 +1,14 @@
+{
+  "name": "@open-cc-examples/asterisk-agent",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Integration adapter for asterisk",
+  "main": "src/index",
+  "dependencies": {
+    "@types/ari-client": "2.2.1",
+    "@open-cc/api-common": "^0.0.0",
+    "@open-cc/asterisk-ari-connector": "^0.0.0",
+    "@open-cc/core-api": "^0.0.0",
+    "ddd-es-node": "0.3.106"
+  }
+}

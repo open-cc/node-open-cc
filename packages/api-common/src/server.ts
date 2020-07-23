@@ -1,7 +1,10 @@
 import {
   Client,
   connect,
-  Msg
+  Msg,
+  MsgCallback,
+  Subscription,
+  SubscriptionOptions
 } from 'ts-nats';
 import {
   defaultEsContext,
@@ -36,19 +39,28 @@ export class StreamBound implements Stream {
     }
   }
 
-  on<T>(name : (string | ConstructorOf<T>), handler : MessageHandler<T>) : Stream {
+  public on<T>(name : (string | ConstructorOf<T>), handler : MessageHandler<T>) : Stream {
     if (!this.apiReg) {
       throw new Error(`No apireg for ${this.stream}`);
     }
     const strName : string = typeof name === 'string' ? name : name.name;
     this.apiReg.handlers[this.stream] = this.apiReg.handlers[this.stream] || {};
     this.apiReg.handlers[this.stream][strName] = handler;
+    setTimeout(async () => {
+      await this.apiReg.register();
+    }, 1);
     return this;
   }
 
-  async broadcast<T>(message : any) : Promise<T[]> {
+  public async awaitRegistration() {
+    while (!this.apiReg.subscriptions[`${this.stream}-broadcast`]) {
+      await new Promise((resolve) => setTimeout(() => resolve(), 100));
+    }
+  }
+
+  public async broadcast<T>(message : any) : Promise<T[]> {
     message.stream = this.stream;
-    const msg : Msg = await this.apiReg.natsConnection.request(this.stream, 30000, JSON.stringify(message));
+    const msg : Msg = await this.apiReg.natsConnection.request(`${this.stream}-broadcast`, 30000, JSON.stringify(message));
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T[];
     } catch (err) {
@@ -57,10 +69,10 @@ export class StreamBound implements Stream {
     }
   }
 
-  async send<T>(partitionKey : string, message : any) : Promise<T> {
+  public async send<T>(partitionKey : string, message : any) : Promise<T> {
     message.stream = this.stream;
     message.partitionKey = partitionKey;
-    const msg : Msg = await this.apiReg.natsConnection.request(this.stream, 30000, JSON.stringify(message));
+    const msg : Msg = await this.apiReg.natsConnection.request(`${this.stream}-queue-group`, 30000, JSON.stringify(message));
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T;
     } catch (err) {
@@ -68,14 +80,21 @@ export class StreamBound implements Stream {
       throw err;
     }
   }
+
+  public async unbind() {
+    await this.apiReg.unregister(this.stream);
+  }
 }
 
 export class ApiRegBound implements ApiDeps {
-  public handlers : { [stream : string] : { [name : string] : MessageHandler<any> } } = {};
+  public readonly handlers : { [stream : string] : { [name : string] : MessageHandler<any> } } = {};
+  public readonly registeredStreams : string[] = [];
+  public readonly subscriptions : { [stream : string] : Subscription } = {};
+  private readonly pendingRegistrations : Promise<void>[] = [];
 
-  constructor(public entityRepository : EntityRepository,
-              public eventBus : EventBus,
-              public natsConnection : Client) {
+  constructor(public readonly entityRepository : EntityRepository,
+              public readonly eventBus : EventBus,
+              public readonly natsConnection : Client) {
   }
 
   public stream(stream : string) : Stream {
@@ -83,41 +102,91 @@ export class ApiRegBound implements ApiDeps {
   }
 
   public async register() {
-    const self : ApiRegBound = this;
-    const handlerStreams : string[] = Object.keys(this.handlers);
-    for (const stream of handlerStreams) {
-      await this.natsConnection.subscribe(stream, async (err : NatsError | null, msg : Msg) => {
-        const data = JSON.parse(msg.data);
-        const header : MessageHeader = {
-          stream: msg.subject,
-          partitionKey: data.partitionKey
-        };
-        if (err) {
-          throw err;
-        } else {
-          await self.invokeHandler(stream, 'before', data, header);
-          try {
-            const res = await self.invokeHandler(stream, data.name, data, header);
-            if (msg.reply) {
-              this.natsConnection.publish(msg.reply, JSON.stringify(res));
+    this.pendingRegistrations.push((async () => {
+      const handlerStreams : string[] = Object
+        .keys(this.handlers)
+        .filter(stream => !this.registeredStreams.includes(stream));
+      for (const stream of handlerStreams) {
+        this.registeredStreams.push(stream);
+        const self : ApiRegBound = this;
+        const msgCallback : MsgCallback = async (err : NatsError | null, msg : Msg) => {
+          const data = JSON.parse(msg.data);
+          const header : MessageHeader = {
+            stream: msg.subject,
+            partitionKey: data.partitionKey
+          };
+          if (err) {
+            throw err;
+          } else {
+            try {
+              await self.invokeHandler(stream, 'before', data, header);
+              try {
+                const res = await self.invokeHandler(stream, data.name, data, header);
+                if (msg.reply) {
+                  this.natsConnection.publish(msg.reply, JSON.stringify(res));
+                }
+              } finally {
+                await self.invokeHandler(stream, 'after', data, header);
+              }
+            } catch (err) {
+              log('Error invoking handler', err);
+              if (msg.reply) {
+                this.natsConnection.publish(msg.reply, JSON.stringify({
+                  type: 'error',
+                  error: err.message
+                }));
+              }
             }
-          } finally {
-            await self.invokeHandler(stream, 'after', data, header);
           }
+        };
+        await this.makeSubscription(`${stream}-broadcast`, msgCallback);
+        await this.makeSubscription(`${stream}-queue-group`, msgCallback, {queue: `${stream}-qg`});
+      }
+      if (handlerStreams.length > 0) {
+        log(`Registered streams: [${handlerStreams.join(', ')}]`);
+      }
+    })());
+  }
+
+  private async makeSubscription(name : string, msgCallback : MsgCallback, opts? : SubscriptionOptions) {
+    this.subscriptions[name] = await this.natsConnection.subscribe(name, msgCallback, opts);
+  }
+
+  public async unregister(stream : string) {
+    for (const subject of [`${stream}-broadcast`, `${stream}-queue-group`]) {
+      if (this.subscriptions[subject]
+        && !this.subscriptions[subject].isDraining()
+        && !this.subscriptions[subject].isCancelled()) {
+        log(`Draining stream ${subject}`);
+        await this.subscriptions[subject].drain();
+        delete this.handlers[stream];
+        const idx = this.registeredStreams.indexOf(stream);
+        if (idx > -1) {
+          this.registeredStreams.splice(idx, 1);
         }
-      });
+        log(`Unregistered stream ${subject}`);
+      }
     }
-    log(`Registered handlers: [${handlerStreams.join(', ')}]`);
+  }
+
+  public async awaitRegistrations() {
+    await Promise.all(this.pendingRegistrations);
   }
 
   public async shutdown() : Promise<void> {
     for (const handler of shutdownHandlers) {
+      try {
+        log('Closing nats connection');
+        await this.natsConnection.drain();
+      } catch (err) {
+        log('Failed to close nats connection');
+      }
       await handler();
     }
   }
 
   private async invokeHandler(stream : string, name : string, data : any, header : MessageHeader) {
-    const handler : MessageHandler<any> = this.handlers[stream][name];
+    const handler : MessageHandler<any> = this.handlers[stream][name] || this.handlers[stream]['*'];
     if (handler) {
       return await handler(data, header);
     } else {
@@ -140,7 +209,7 @@ export async function configure(apis : Api[],
     log('Broadcasting', event);
     try {
       natsConnection
-        .publish('events', JSON.stringify(event));
+        .publish('events-broadcast', JSON.stringify(event));
     } catch (err) {
       log('Failed to broadcast event', event, err);
     }
@@ -153,7 +222,7 @@ export async function configure(apis : Api[],
       apiReg = apiRegConfigurator(apiReg);
     }
     await api(apiReg);
-    await apiReg.register();
+    await apiReg.awaitRegistrations();
     apiRegs.push(apiReg);
   }
   if (apiRegs.length > 0) {
@@ -203,7 +272,7 @@ export async function configure(apis : Api[],
   return apiRegs;
 }
 
-async function getNatsConnection(attempts: number = 1000) {
+async function getNatsConnection(attempts : number = 1000) {
   let natsConnection;
   while (!natsConnection && attempts > 0) {
     try {
@@ -243,6 +312,7 @@ export function run() {
     await configure(apis, entityRepository, eventBus, natsConnection, 8080);
     log(`Registration complete ${services.join(', ')}`);
   }
+
   doRun()
     .catch(err => log(err));
 }

@@ -15,9 +15,11 @@ RUN npm install --unsafe-perm
 
 COPY ./lerna.json .
 COPY ./packages/api-common/package.json ./packages/api-common/
-COPY ./examples/stasis-app/package.json ./examples/stasis-app/
+COPY ./examples/flow/package.json ./examples/flow/
+COPY ./packages/asterisk-agent/package.json ./packages/asterisk-agent/
 COPY ./packages/asterisk-ari-connector/package.json ./packages/asterisk-ari-connector/
 COPY ./packages/core-api/package.json ./packages/core-api/
+COPY ./packages/flow-processor/package.json ./packages/flow-processor/
 RUN npm run lerna:bootstrap
 
 COPY . .

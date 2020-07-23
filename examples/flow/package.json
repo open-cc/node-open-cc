@@ -5,10 +5,9 @@
   "description": "An example stasis app using node-open-cc packages",
   "main": "src/index",
   "dependencies": {
-    "@types/ari-client": "2.2.1",
     "@open-cc/api-common": "^0.0.0",
-    "@open-cc/asterisk-ari-connector": "^0.0.0",
     "@open-cc/core-api": "^0.0.0",
+    "@open-cc/flow-processor": "^0.0.0",
     "ddd-es-node": "0.3.106"
   }
 }

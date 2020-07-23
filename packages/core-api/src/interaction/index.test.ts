@@ -13,9 +13,7 @@ describe('interaction-api', () => {
   beforeEach(async () => {
     apiDeps = await test(api);
   }, 20000);
-  afterEach(async () => {
-    await apiDeps.shutdown();
-  });
+  afterEach(async () => await apiDeps.shutdown());
   it('initiates calls', async () => {
     await apiDeps
       .stream('interactions')

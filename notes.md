@@ -45,11 +45,17 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] review if there are any hacks in kamailio config or routing logic
 - [x] create kamailio-proxy dockerfile
 - [x] add mechanism to update cluster friend config in sip.conf
-- [ ] integrate logic from example-stasis-app as generic capability
 - [x] determine which things should be externally configured in asterisk - e.g. certain ari.conf settings
 - [x] external configuration of rtp ports
-- [ ] cleanup dispatcher list setup so it handles if kamailio restarted
-- [ ] cleanup dispatcher list setup so it detects dead destinations
+- [x] cleanup dispatcher list setup so it handles if kamailio restarted
+- [x] cleanup dispatcher list setup so it detects dead destinations
+- [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
+- [ ] integrate logic from example-stasis-app as generic capability
+    - [ ] change example to flow-processor adapter service (loads flow, integrates commands)
+    - [x] make asterisk-agent respond to commands using stream specific to asteriskId (or interactionId with short-lived subscription)
+    - [ ] handle RoutingFailedEvent in asterisk through flow?
+- [ ] add app level error handling for nats replys if listener has an error
+- [ ] make flow-processor adapter service generic
 - [ ] auto-register twilio trunk + number
     - [ ]  auto-ngrok setup for local dev env
 - [ ] terraform provisioning and scaling controller

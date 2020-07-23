@@ -9,7 +9,7 @@ describe('router-api', () => {
   beforeEach(async () => {
     apiDeps = await test(api);
   }, 60000);
-  afterEach(async () => await apiDeps.cleanup());
+  afterEach(async () => await apiDeps.shutdown());
   it('tracks worker state', async () => {
     await apiDeps.stream('workers').send('thePartitionKey', {
       name: 'UpdateWorkerRegistration',
@@ -47,9 +47,9 @@ describe('router-api', () => {
     }, 100);
     await wait(21);
     await apiDeps
-      .stream('events')
+      .stream('routing')
       .send('thePartitionKey', {
-        name: 'CallInitiatedEvent',
+        name: 'BeginRouting',
         streamId: '123',
         fromAddress: 'SIP/1001',
         waitInterval: 90,
