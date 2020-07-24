@@ -33,7 +33,7 @@ export default async ({stream, entityRepository} : ApiDeps) => {
     });
 
   stream('routing')
-    .on('BeginRouting', async (command : BeginRoutingCommand) => {
+    .on('route', async (command : BeginRoutingCommand) => {
       log(`Received ${command.name}: routing interaction ${command.streamId}`, command);
       const route : Route = await entityRepository
         .load(Route, command.streamId, workerService);
@@ -61,10 +61,10 @@ export default async ({stream, entityRepository} : ApiDeps) => {
         return {message: `Failed to update worker registration - ${err.message}`}
       }
     })
-    .on('GetWorkers', () => {
+    .on('get_workers', () => {
       return {workers: workerService.getWorkersState()};
     })
-    .on('GetWorkerAddress', async ({workerId}) => {
+    .on('get_worker_address', async ({workerId}) => {
       const workerState : WorkerState = workerService.getWorkersState()[workerId];
       return workerState ? workerState.address : 'none';
     });

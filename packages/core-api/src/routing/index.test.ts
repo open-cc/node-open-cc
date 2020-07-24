@@ -49,7 +49,7 @@ describe('router-api', () => {
     await apiDeps
       .stream('routing')
       .send('thePartitionKey', {
-        name: 'BeginRouting',
+        name: 'route',
         streamId: '123',
         fromAddress: 'SIP/1001',
         waitInterval: 90,

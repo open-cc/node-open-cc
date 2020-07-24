@@ -35,7 +35,10 @@ describe('flow-processor', () => {
       flow2 = new FlowModel(graphs[1], executor);
     });
     it('can receive events', async () => {
-      flow = await flow.receive({name: 'CallInitiatedEvent', streamId: 'the_interaction_id'});
+      flow = await flow.receive({
+        name: 'CallInitiatedEvent',
+        streamId: 'the_interaction_id'
+      });
       expect(flow.text)
         .toBe('CallInitiatedEvent-route-play-sound');
       expect(executor.execute).toHaveBeenCalledWith('route',
@@ -89,6 +92,44 @@ describe('flow-processor', () => {
       const s2 = await s1.receive({name: 'EventC'});
       const s3 = await s2.receive({name: 'EventD'});
       expect(s3.text).toBe('EventD-c-d');
+    });
+    it('can interpolate variables into text', async () => {
+      const s1 = await flow2.receive({name: 'EventA'});
+      expect(s1.text).toBe('EventA-store-storedData-a');
+    });
+    it('can batch actions', async () => {
+      executor.execute = jest.fn(async (command : string, ...args : any[]) => {
+        if (command === '@batch') {
+          const results = [];
+          const commands = args[0];
+          for (const cmd of commands) {
+            if (cmd.action === 'execute') {
+              results.push(executor[cmd.action](cmd.command, ...cmd.args));
+            } else {
+              results.push(executor[cmd.action](...cmd.args));
+            }
+          }
+          return results;
+        }
+      });
+      const s1 = await flow.batch().receive({
+        name: 'CallInitiatedEvent',
+        streamId: 'the_interaction_id'
+      });
+      expect(executor.execute).toHaveBeenCalledWith('@batch',
+        expect.arrayContaining([{
+          action: 'execute',
+          command: 'route',
+          args: [expect.objectContaining({name: 'CallInitiatedEvent'})]
+        }, {
+          action: 'instantiate',
+          type: 'sound',
+          args: ['the_interaction_id', 'moh']
+        }]));
+      expect(executor.execute).toHaveBeenCalledWith('route',
+        expect.objectContaining({name: 'CallInitiatedEvent'}));
+      expect(sound.play).toHaveBeenCalledWith('the_interaction_id', 'moh');
+      expect(s1.text).toBe('CallInitiatedEvent-route-play-sound');
     });
   });
 });

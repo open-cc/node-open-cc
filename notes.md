@@ -33,8 +33,8 @@ sip:23@192.168.188.110
 ```shell script
 curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services
 curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services | jq '.[] | "\(.stream) \(.endpoints[0].description)"'
-curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"GetWorkers"}' | jq
-curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"GetWorkerAddress","workerId":"1002"}'
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_workers"}' | jq
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_worker_address","workerId":"1002"}'
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers/1002 -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
 curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/interactions --data '{"name":"get"}' | jq
 curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/1234 --data '{"name":"started","interactionId":"1234","channel":"voice"}' | jq
@@ -49,13 +49,10 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] external configuration of rtp ports
 - [x] cleanup dispatcher list setup so it handles if kamailio restarted
 - [x] cleanup dispatcher list setup so it detects dead destinations
+- [x] integrate logic from example-stasis-app as generic capability
+- [x] make flow-processor adapter service generic
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
-- [ ] integrate logic from example-stasis-app as generic capability
-    - [ ] change example to flow-processor adapter service (loads flow, integrates commands)
-    - [x] make asterisk-agent respond to commands using stream specific to asteriskId (or interactionId with short-lived subscription)
-    - [ ] handle RoutingFailedEvent in asterisk through flow?
 - [ ] add app level error handling for nats replys if listener has an error
-- [ ] make flow-processor adapter service generic
 - [ ] auto-register twilio trunk + number
     - [ ]  auto-ngrok setup for local dev env
 - [ ] terraform provisioning and scaling controller

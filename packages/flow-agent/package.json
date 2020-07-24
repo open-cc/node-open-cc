@@ -1,8 +1,8 @@
 {
-  "name": "@open-cc-examples/stasis-app",
+  "name": "@open-cc-examples/flow-agent",
   "private": true,
   "version": "0.0.0",
-  "description": "An example stasis app using node-open-cc packages",
+  "description": "Executes flows",
   "main": "src/index",
   "dependencies": {
     "@open-cc/api-common": "^0.0.0",
