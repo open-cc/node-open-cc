@@ -59,6 +59,13 @@ export default async ({stream} : ApiDeps) => {
     }
   }
 
+  // handle http request
+  // convert to event
+  // call receive
+  // get actions (may not need batch processor in lib now)
+  // convert to twiml
+  // reply
+
   if (process.env.FLOW) {
     fs.access(process.env.FLOW, fs_const.F_OK)
       .then(() => {
@@ -69,7 +76,10 @@ export default async ({stream} : ApiDeps) => {
                 flowModels[event.streamId] = new FlowModel(getGraphs(JSON.parse(`${await fs.readFile(process.env.FLOW)}`))[0],
                   new StreamFlowProcessExecutor());
               }
-              flowModels[event.streamId] = await flowModels[event.streamId].receive(event);
+              log(`Flow ${flowModels[event.streamId].text} ${event.streamId} received`, JSON.stringify(event));
+              const next = await flowModels[event.streamId].receive(event);
+              log(`Next flow state ${next.text}`);
+              flowModels[event.streamId] = next;
             } catch (err) {
               log(err);
             }

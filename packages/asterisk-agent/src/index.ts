@@ -8,7 +8,8 @@ import {
   StasisConnection
 } from '@open-cc/asterisk-ari-connector';
 import {
-  ExternalInteractionAnsweredEvent,
+  ExternalInteractionPartyJoinedEvent,
+  ExternalInteractionPartyLeftEvent,
   ExternalInteractionEndedEvent,
   ExternalInteractionInitiatedEvent,
   InteractionEndedEvent,
@@ -115,7 +116,7 @@ export default async ({stream} : ApiDeps) => {
           });
 
           dialed.on('ChannelDestroyed', async (event : Ari.ChannelDestroyed, dialed : Ari.Channel) => {
-            await hangupChannel(channel, `Dialed channel ${dialed.name} left our application, hanging up original channel ${channel.name}`);
+            // await hangupChannel(channel, `Dialed channel ${dialed.name} left our application, hanging up original channel ${channel.name}`);
           });
 
           dialed.on('StasisStart', async (stasisStartEvent : Ari.StasisStart, dialed : Ari.Channel) => {
@@ -123,13 +124,23 @@ export default async ({stream} : ApiDeps) => {
             log(`${stasisStartEvent.application} started`);
 
             bridge.on('ChannelLeftBridge', async (event : Ari.ChannelLeftBridge, instances : Ari.ChannelLeftBridge) => {
-              await hangupChannel(channel, `Channel ${instances.channel.name} has left the bridge, hanging up ${channel.name}`);
+              log(`Channel ${instances.channel.name} has left the bridge`, dialed);
+              if (instances.channel.name === dialed.name) {
+                await stream('interactions')
+                  .send(connection.asteriskId,
+                    new ExternalInteractionPartyLeftEvent(
+                      command.interactionId,
+                      routingEndpoint));
+              }
+              // await hangupChannel(channel, `Channel ${instances.channel.name} has left the bridge, hanging up ${channel.name}`);
             });
 
             dialed.on('StasisEnd', async (event : Ari.StasisEnd, dialed : Ari.Channel) => {
               log(
-                `Dialed channel ${dialed.name} has left our application, destroying bridge ${bridge.id}`);
-              await bridge.destroy();
+                `Dialed channel ${dialed.name} has left our application`);
+              // log(
+              //   `Dialed channel ${dialed.name} has left our application, destroying bridge ${bridge.id}`);
+              // await bridge.destroy();
             });
 
             log('Waiting for dialed channel to answer');
@@ -138,7 +149,7 @@ export default async ({stream} : ApiDeps) => {
 
             await stream('interactions')
               .send(connection.asteriskId,
-                new ExternalInteractionAnsweredEvent(
+                new ExternalInteractionPartyJoinedEvent(
                   command.interactionId,
                   routingEndpoint));
 

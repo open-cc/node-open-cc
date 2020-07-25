@@ -61,6 +61,13 @@ describe('flow-processor', () => {
       });
       expect(sound.stop).toHaveBeenCalledWith('the_interaction_id', 'moh');
       expect(flow.text).toBe('InteractionAnsweredEvent-stop-sound');
+      flow = await flow.receive({name: 'InteractionPartyLeftEvent'});
+      expect(executor.instantiate).toHaveBeenCalledWith(
+        'sound',
+        'the_interaction_id',
+        'moh');
+      expect(executor.execute).toHaveBeenCalledWith('route',
+        expect.objectContaining({name: 'CallInitiatedEvent'}));
     });
     it('merges transitions from actions', async () => {
       flow2 = await flow2
@@ -97,39 +104,26 @@ describe('flow-processor', () => {
       const s1 = await flow2.receive({name: 'EventA'});
       expect(s1.text).toBe('EventA-store-storedData-a');
     });
-    it('can batch actions', async () => {
-      executor.execute = jest.fn(async (command : string, ...args : any[]) => {
-        if (command === '@batch') {
-          const results = [];
-          const commands = args[0];
-          for (const cmd of commands) {
-            if (cmd.action === 'execute') {
-              results.push(executor[cmd.action](cmd.command, ...cmd.args));
-            } else {
-              results.push(executor[cmd.action](...cmd.args));
-            }
+    it('processes events sequentially', async () => {
+      executor.instantiate = async (type, ...args) => {
+        return {
+          id: `${type}_1`, play: async () => {
+            await delay(100);
           }
-          return results;
-        }
-      });
-      const s1 = await flow.batch().receive({
+        };
+      };
+      setTimeout(async () => {
+        flow = await flow.receive({
+          name: 'RoutingCompleteEvent'
+        });
+      }, 1);
+      flow = await flow.receive({
         name: 'CallInitiatedEvent',
         streamId: 'the_interaction_id'
       });
-      expect(executor.execute).toHaveBeenCalledWith('@batch',
-        expect.arrayContaining([{
-          action: 'execute',
-          command: 'route',
-          args: [expect.objectContaining({name: 'CallInitiatedEvent'})]
-        }, {
-          action: 'instantiate',
-          type: 'sound',
-          args: ['the_interaction_id', 'moh']
-        }]));
-      expect(executor.execute).toHaveBeenCalledWith('route',
-        expect.objectContaining({name: 'CallInitiatedEvent'}));
-      expect(sound.play).toHaveBeenCalledWith('the_interaction_id', 'moh');
-      expect(s1.text).toBe('CallInitiatedEvent-route-play-sound');
+      expect(flow.text).toBe('RoutingCompleteEvent-bridge');
     });
   });
 });
+
+const delay = ms => new Promise(resolve => setTimeout(() => resolve(), ms));

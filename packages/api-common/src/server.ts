@@ -32,6 +32,10 @@ const logName : string = 'api-container';
 const log : debug.Debugger = debug(`${logName}:container`);
 const shutdownHandlers : (() => Promise<void>)[] = [];
 
+function createMessageId() {
+  return `${Math.random().toString().slice(2,32)}`;
+}
+
 export class StreamBound implements Stream {
   constructor(private stream : string, private apiReg : ApiRegBound) {
     if (!apiReg) {
@@ -60,6 +64,7 @@ export class StreamBound implements Stream {
 
   public async broadcast<T>(message : any) : Promise<T[]> {
     message.stream = this.stream;
+    message.m_uuid = createMessageId();
     const msg : Msg = await this.apiReg.natsConnection.request(`${this.stream}-broadcast`, 30000, JSON.stringify(message));
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T[];
@@ -72,6 +77,7 @@ export class StreamBound implements Stream {
   public async send<T>(partitionKey : string, message : any) : Promise<T> {
     message.stream = this.stream;
     message.partitionKey = partitionKey;
+    message.m_uuid = createMessageId();
     const msg : Msg = await this.apiReg.natsConnection.request(`${this.stream}-queue-group`, 30000, JSON.stringify(message));
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T;
@@ -91,6 +97,7 @@ export class ApiRegBound implements ApiDeps {
   public readonly registeredStreams : string[] = [];
   public readonly subscriptions : { [stream : string] : Subscription } = {};
   private readonly pendingRegistrations : Promise<void>[] = [];
+  private readonly receivedMessages : { [key : string] : boolean } = {};
 
   constructor(public readonly entityRepository : EntityRepository,
               public readonly eventBus : EventBus,
@@ -111,6 +118,13 @@ export class ApiRegBound implements ApiDeps {
         const self : ApiRegBound = this;
         const msgCallback : MsgCallback = async (err : NatsError | null, msg : Msg) => {
           const data = JSON.parse(msg.data);
+          if (data.m_uuid) {
+            if (this.receivedMessages[`${stream}-${data.m_uuid}`]) {
+              log(`Received duplicate message ${data.name}(${data.m_uuid}) on stream ${stream}`);
+              return;
+            }
+            this.receivedMessages[`${stream}-${data.m_uuid}`] = true;
+          }
           const header : MessageHeader = {
             stream: msg.subject,
             partitionKey: data.partitionKey
@@ -129,7 +143,7 @@ export class ApiRegBound implements ApiDeps {
                 await self.invokeHandler(stream, 'after', data, header);
               }
             } catch (err) {
-              log('Error invoking handler', err);
+              log(`Error invoking handler - ${stream}`, data, err);
               if (msg.reply) {
                 this.natsConnection.publish(msg.reply, JSON.stringify({
                   type: 'error',
@@ -206,10 +220,11 @@ export async function configure(apis : Api[],
                                 httpPort : number,
                                 apiRegConfigurator? : ApiRegConfigurator) : Promise<ApiRegBound[]> {
   eventBus.subscribe(async (event : EntityEvent) => {
-    log('Broadcasting', event);
+    const eventJson = JSON.stringify({ ...event, m_uuid: event.uuid });
+    log('Broadcasting', eventJson);
     try {
       natsConnection
-        .publish('events-broadcast', JSON.stringify(event));
+        .publish('events-broadcast', eventJson);
     } catch (err) {
       log('Failed to broadcast event', event, err);
     }

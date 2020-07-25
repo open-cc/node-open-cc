@@ -81,25 +81,30 @@ export class Route extends Entity {
         this.dispatch(new RoutingFailedEvent(interactionId));
     }, waitTimeout);
     const timer : NodeJS.Timer = setInterval(async () => {
-      this.dispatch(new RoutingInProgressEvent(interactionId));
-      const workersState : WorkersState = this.workerService.getWorkersState();
-      const worker : WorkerState = Object.keys(workersState)
-        .map(id => workersState[id])
-        .filter(worker => {
-          return worker.status &&
-                 worker.status !== 'offline' &&
-                 worker.routingAddress &&
-                 Route.getLastAddressComponent(worker.routingAddress) !== Route.getLastAddressComponent(fromAddress)
-        })[0];
-      log(`Locating worker for ${interactionId} from`, workersState);
-      if (worker) {
-        log(`Worker located for ${interactionId}`, worker);
+      if (this.complete) {
         this.clearTimers();
-        this.dispatch(new RoutingCompleteEvent(
-          interactionId,
-          worker.routingAddress));
+      } else {
+        this.dispatch(new RoutingInProgressEvent(interactionId));
+        const workersState : WorkersState = this.workerService.getWorkersState();
+        const worker : WorkerState = Object.keys(workersState)
+          .map(id => workersState[id])
+          .filter(worker => {
+            return worker.status &&
+              worker.status !== 'offline' &&
+              worker.routingAddress &&
+              Route.getLastAddressComponent(worker.routingAddress) !== Route.getLastAddressComponent(fromAddress)
+          })[0];
+        log(`Locating worker for ${interactionId} from`, workersState);
+        if (worker) {
+          log(`Worker located for ${interactionId}`, worker);
+          this.clearTimers();
+          this.dispatch(new RoutingCompleteEvent(
+            interactionId,
+            worker.routingAddress));
+        }
       }
     }, waitInterval);
+    log(`Setting timers for ${interactionId}`);
     timerState[interactionId] = [timeout, timer];
     this.dispatch(new RoutingStartedEvent(interactionId));
   }
@@ -114,6 +119,7 @@ export class Route extends Entity {
   private clearTimers() {
     if (timerState[this.interactionId]) {
       const timers : NodeJS.Timer[] = timerState[this.interactionId];
+      log(`Clearing ${timers.length} timers`);
       delete timerState[this.interactionId];
       while(timers.length > 0) {
         clearTimeout(timers.shift());

@@ -3,6 +3,7 @@ const TYPE_EVENT = 'com.gliffy.shape.flowchart.flowchart_v1.default.input_output
 const TYPE_CONNECTOR = 'com.gliffy.shape.basic.basic_v1.default.line';
 const TYPE_PROCESS = 'com.gliffy.shape.flowchart.flowchart_v1.default.process';
 const TYPE_STORE = 'com.gliffy.shape.flowchart.flowchart_v1.default.database';
+const TYPE_PASS_THROUGH = 'com.gliffy.shape.flowchart.flowchart_v1.default.connector';
 const TRANSITION_DEFAULT_ACTION = '_go';
 
 export interface FlowTransition {
@@ -58,13 +59,35 @@ export function getGraphs(data : any) : FlowElement[] {
       objs[obj.id] = obj;
       return objs;
     }, {});
-  const graph = data.stage.objects
+  const rawEdges = data.stage.objects
     .filter(o => o.uid === TYPE_CONNECTOR)
-    .reduce((graph, line) => {
+    .reduce((edges, line) => {
       const {constraints} = line;
       if (constraints && constraints.startConstraint && constraints.endConstraint) {
         const startNodeId = constraints.startConstraint.StartPositionConstraint.nodeId;
         const endNodeId = constraints.endConstraint.EndPositionConstraint.nodeId;
+        edges[startNodeId] = edges[startNodeId] || [];
+        edges[startNodeId].push({ text: getText(line), endNodeId });
+      }
+      return edges;
+    }, {});
+  Object.keys(rawEdges)
+    .forEach((startNodeId) => {
+      const edges = rawEdges[startNodeId];
+      rawEdges[startNodeId] = edges.reduce((combinedEdges, edge) => {
+        if (dataStageObjects[edge.endNodeId].uid === TYPE_PASS_THROUGH) {
+          combinedEdges.push(...rawEdges[edge.endNodeId]);
+        } else {
+          combinedEdges.push(edge);
+        }
+        return combinedEdges;
+      }, []);
+    });
+  const graph = Object.keys(rawEdges)
+    .reduce((graph, startNodeId) => {
+      const edges = rawEdges[startNodeId];
+      for (const edge of edges) {
+        const { endNodeId } = edge;
         graph[endNodeId] = graph[endNodeId] || {
           id: endNodeId,
           transitions: []
@@ -75,7 +98,7 @@ export function getGraphs(data : any) : FlowElement[] {
         const transition : FlowTransition = {
           id: `${Math.floor(100000 + Math.random() * 900000)}`,
           to: graph[endNodeId],
-          text: getText(line) || TRANSITION_DEFAULT_ACTION,
+          text: edge.text || TRANSITION_DEFAULT_ACTION,
           pos: dataStageObjects[endNodeId].y
         };
         graph[startNodeId].transitions.push(transition);
@@ -101,45 +124,17 @@ export function getGraphs(data : any) : FlowElement[] {
     .sort((g1, g2) => dataStageObjects[g1.id].y - dataStageObjects[g2.id].y);
 }
 
-class BatchingFlowProcessExecutor implements FlowProcessExecutor {
-  public readonly commands : any[] = [];
-
-  execute(command : string, ...args : any[]) : Promise<any> {
-    this.commands.push({
-      action: 'execute',
-      command,
-      args
-    });
-    return Promise.resolve();
-  }
-
-  instantiate(type : string, ...args : any[]) : Promise<FlowObject> {
-    this.commands.push({
-      action: 'instantiate',
-      type,
-      args
-    });
-    return Promise.resolve({
-      id: 'tbd'
-    });
-  }
-
-}
-
 export class FlowModel implements FlowElementHeader {
+  private isProcessing : boolean = false;
+  private queuedEvents : any[] = [];
   constructor(private readonly graph : FlowElement,
               private readonly executor : FlowProcessExecutor,
               private readonly _context : FlowContext = {
                 eventsReceived: {},
                 data: {}
-              },
-              private readonly batchMode : boolean = false) {
+              }) {
     this.graph = graph;
     this.parseArg = this.parseArg.bind(this);
-  }
-
-  public batch() : FlowModel {
-    return new FlowModel(this.graph, this.executor, this._context, true);
   }
 
   public get context() {
@@ -158,23 +153,27 @@ export class FlowModel implements FlowElementHeader {
   }
 
   private async sendEvent(model : FlowModel, event : any) : Promise<FlowModel> {
-    for (const transition of model.graph.transitions) {
-      if (transition.to.uid === TYPE_EVENT &&
-        this.evaluateText(transition.to.text) === event.name) {
-        transition.to.text = this.evaluateText(transition.to.text);
-        this._context.eventsReceived[event.name] = model._context.eventsReceived[event.name] || [];
-        this._context.eventsReceived[event.name].push(event);
-        if (this.batchMode) {
-          const executor : BatchingFlowProcessExecutor = new BatchingFlowProcessExecutor();
-          const next : FlowModel = await model.next(new FlowModel(transition.to, executor, model._context, model.batchMode));
-          await Promise.all(await model.executor.execute('@batch', executor.commands));
-          return new FlowModel(next.graph, model.executor, model._context, model.batchMode);
-        } else {
-          return model.next(new FlowModel(transition.to, model.executor, model._context, model.batchMode));
+    let nextModel = model;
+    if (model.isProcessing) {
+      console.log('queuing', event);
+      model.queuedEvents.push(event);
+    } else {
+      model.isProcessing = true;
+      for (const transition of model.graph.transitions) {
+        if (transition.to.uid === TYPE_EVENT &&
+          this.evaluateText(transition.to.text) === event.name) {
+          transition.to.text = this.evaluateText(transition.to.text);
+          this._context.eventsReceived[event.name] = model._context.eventsReceived[event.name] || [];
+          this._context.eventsReceived[event.name].push(event);
+          nextModel = await model.next(new FlowModel(transition.to, model.executor, model._context));
         }
       }
+      while (model.queuedEvents.length > 0) {
+        nextModel = await nextModel.receive(model.queuedEvents.shift());
+      }
+      model.isProcessing = false;
     }
-    return model;
+    return nextModel;
   }
 
   private async next(model : FlowModel) : Promise<FlowModel> {
@@ -185,7 +184,8 @@ export class FlowModel implements FlowElementHeader {
     };
     let description = [];
     const transitionsExecuted = [];
-    for (const transition of model.graph.transitions) {
+    const transitionsToExecute = [...model.graph.transitions];
+    for (const transition of transitionsToExecute) {
       switch (transition.to.uid) {
         case TYPE_PROCESS: {
           transitionsExecuted.push(transition);
@@ -202,9 +202,9 @@ export class FlowModel implements FlowElementHeader {
             }
             // Call the command on the instantiated object
             if (transitionToNode._flowObject[command]) {
-              transitionToNode._flowObject[command].bind(transitionToNode._flowObject)(...rest);
+              await transitionToNode._flowObject[command].bind(transitionToNode._flowObject)(...rest);
             } else if (transitionToNode._flowObject.method_missing) {
-              transitionToNode._flowObject.method_missing.bind(transitionToNode._flowObject)(command, ...rest);
+              await transitionToNode._flowObject.method_missing.bind(transitionToNode._flowObject)(command, ...rest);
             }
             description.push(command);
             description.push(type);
@@ -234,12 +234,12 @@ export class FlowModel implements FlowElementHeader {
         const nextFlow = await this.next(new FlowModel({
           ...(transition.to),
           text: description.join('-')
-        }, model.executor, model._context, model.batchMode));
+        }, model.executor, model._context));
         nextFlowTransitions.text = [model.text, nextFlow.text].join('-');
         nextFlowTransitions.transitions = [...nextFlowTransitions.transitions, ...nextFlow.graph.transitions];
       }
       sortTransitions(nextFlowTransitions.transitions);
-      return new FlowModel(nextFlowTransitions, model.executor, model._context, model.batchMode);
+      return new FlowModel(nextFlowTransitions, model.executor, model._context);
     }
     return model;
   }

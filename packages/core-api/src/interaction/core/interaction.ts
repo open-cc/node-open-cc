@@ -25,7 +25,13 @@ export class ExternalInteractionEndedEvent extends InteractionEvent {
   }
 }
 
-export class ExternalInteractionAnsweredEvent extends InteractionEvent {
+export class ExternalInteractionPartyJoinedEvent extends InteractionEvent {
+  constructor(public readonly interactionId: string, public readonly endpoint: string) {
+    super();
+  }
+}
+
+export class ExternalInteractionPartyLeftEvent extends InteractionEvent {
   constructor(public readonly interactionId: string, public readonly endpoint: string) {
     super();
   }
@@ -49,7 +55,13 @@ export class InteractionRoutedEvent extends InteractionEvent {
   }
 }
 
-export class InteractionAnsweredEvent extends InteractionEvent {
+export class InteractionPartyJoinedEvent extends InteractionEvent {
+  constructor(public readonly endpoint : string) {
+    super();
+  }
+}
+
+export class InteractionPartyLeftEvent extends InteractionEvent {
   constructor(public readonly endpoint : string) {
     super();
   }
@@ -75,8 +87,12 @@ export class Interaction extends Entity {
     this.dispatch(new InteractionRoutedEvent(endpoint));
   }
 
-  public answer(endpoint) {
-    this.dispatch(new InteractionAnsweredEvent(endpoint));
+  public addParty(endpoint) {
+    this.dispatch(new InteractionPartyJoinedEvent(endpoint));
+  }
+
+  public removeParty(endpoint) {
+    this.dispatch(new InteractionPartyLeftEvent(endpoint));
   }
 
   public end() {
@@ -100,9 +116,14 @@ export class InteractionService {
     interaction.routeTo(endpoint);
   }
 
-  public async answer(interactionId, answeredByEndpoint) {
+  public async addParty(interactionId, endpoint) {
     const interaction : Interaction = await this.entityRepository.load(this.getInteractionType(), interactionId);
-    interaction.answer(answeredByEndpoint);
+    interaction.addParty(endpoint);
+  }
+
+  public async removeParty(interactionId, endpoint) {
+    const interaction : Interaction = await this.entityRepository.load(this.getInteractionType(), interactionId);
+    interaction.removeParty(endpoint);
   }
 
   public async endInteraction(interactionId) {

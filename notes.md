@@ -53,8 +53,10 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] make flow-processor adapter service generic
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
 - [ ] add app level error handling for nats replys if listener has an error
+- [ ] handle requests and delayed registration - e.g. calling get_workers before worker apis registered
 - [ ] auto-register twilio trunk + number
     - [ ]  auto-ngrok setup for local dev env
+- [ ] implement twiml flow processor
 - [ ] terraform provisioning and scaling controller
 - [ ] integrate lets encrypt
 - [ ] fix stale message nodes causing timeouts

@@ -5,7 +5,9 @@ import * as debug from 'debug';
 import {
   ExternalInteractionEndedEvent,
   ExternalInteractionInitiatedEvent,
-  ExternalInteractionAnsweredEvent
+  ExternalInteractionPartyJoinedEvent,
+  ExternalInteractionPartyLeftEvent,
+  InteractionService
 } from './core/interaction';
 
 const log = debug('');
@@ -17,7 +19,7 @@ export {
 export default async ({stream, entityRepository, eventBus} : ApiDeps) => {
   log('interaction-api started');
 
-  const interactionServices = {
+  const interactionServices : { voice : CallService } = {
     voice: new CallService(entityRepository)
   };
 
@@ -38,20 +40,30 @@ export default async ({stream, entityRepository, eventBus} : ApiDeps) => {
       const interactionModel = projections.findInteraction(message.interactionId);
       if (interactionModel) {
         const channel = interactionModel.channel;
-        await interactionServices[channel]
+        await (interactionServices[channel] as InteractionService)
           .endInteraction(message.interactionId);
       } else {
         log(`Unable to end interaction, ${message.interactionId} not found`);
       }
     })
-    .on(ExternalInteractionAnsweredEvent, async (message : ExternalInteractionAnsweredEvent) => {
+    .on(ExternalInteractionPartyJoinedEvent, async (message : ExternalInteractionPartyJoinedEvent) => {
       const interactionModel = projections.findInteraction(message.interactionId);
       if (interactionModel) {
         const channel = interactionModel.channel;
-        await interactionServices[channel]
-          .answer(message.interactionId, message.endpoint);
+        await (interactionServices[channel] as InteractionService)
+          .addParty(message.interactionId, message.endpoint);
       } else {
-        log(`Unable to answer interaction, ${message.interactionId} not found`);
+        log(`Unable to add party to interaction, ${message.interactionId} not found`);
+      }
+    })
+    .on(ExternalInteractionPartyLeftEvent, async (message : ExternalInteractionPartyLeftEvent) => {
+      const interactionModel = projections.findInteraction(message.interactionId);
+      if (interactionModel) {
+        const channel = interactionModel.channel;
+        await (interactionServices[channel] as InteractionService)
+          .removeParty(message.interactionId, message.endpoint);
+      } else {
+        log(`Unable to remove party from interaction, ${message.interactionId} not found`);
       }
     })
     .on('get', () => projections.listInteractions());

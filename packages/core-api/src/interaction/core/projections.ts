@@ -1,5 +1,5 @@
 import {
-    InteractionAnsweredEvent,
+    InteractionPartyJoinedEvent,
     InteractionEndedEvent,
     InteractionInitiatedEvent
 } from './interaction';
@@ -22,7 +22,7 @@ export const init = (eventBus : EventBus) => {
                 interactionsView[event.streamId].fromAddress = event.fromAddress;
                 interactionsView[event.streamId].toAddress = event.toAddress;
             }
-        } else if (event instanceof InteractionAnsweredEvent) {
+        } else if (event instanceof InteractionPartyJoinedEvent) {
             if (interactionsView[event.streamId]) {
                 interactionsView[event.streamId].answeredOn = event.timestamp;
             }
