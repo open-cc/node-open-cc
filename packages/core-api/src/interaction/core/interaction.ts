@@ -43,18 +43,6 @@ export class InteractionInitiatedEvent extends InteractionEvent {
   }
 }
 
-export class InteractionPlacedOnHoldEvent extends InteractionEvent {
-  constructor() {
-    super();
-  }
-}
-
-export class InteractionRoutedEvent extends InteractionEvent {
-  constructor(public readonly endpoint : string) {
-    super();
-  }
-}
-
 export class InteractionPartyJoinedEvent extends InteractionEvent {
   constructor(public readonly endpoint : string) {
     super();
@@ -79,14 +67,6 @@ export class Interaction extends Entity {
     this.channel = channel;
   }
 
-  public placeOnHold() {
-    this.dispatch(new InteractionPlacedOnHoldEvent());
-  }
-
-  public routeTo(endpoint) {
-    this.dispatch(new InteractionRoutedEvent(endpoint));
-  }
-
   public addParty(endpoint) {
     this.dispatch(new InteractionPartyJoinedEvent(endpoint));
   }
@@ -104,16 +84,6 @@ export class Interaction extends Entity {
 export class InteractionService {
   constructor(protected entityRepository : EntityRepository,
               private interactionType : any) {
-  }
-
-  public async placeOnHold(interactionId) {
-    const interaction : Interaction = await this.entityRepository.load(this.getInteractionType(), interactionId);
-    interaction.placeOnHold();
-  }
-
-  public async routeTo(interactionId, endpoint) {
-    const interaction : Interaction = await this.entityRepository.load(this.getInteractionType(), interactionId);
-    interaction.routeTo(endpoint);
   }
 
   public async addParty(interactionId, endpoint) {

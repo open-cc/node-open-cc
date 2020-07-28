@@ -51,6 +51,7 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] cleanup dispatcher list setup so it detects dead destinations
 - [x] integrate logic from example-stasis-app as generic capability
 - [x] make flow-processor adapter service generic
+- [ ] re-design model for routes
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
 - [ ] add app level error handling for nats replys if listener has an error
 - [ ] handle requests and delayed registration - e.g. calling get_workers before worker apis registered

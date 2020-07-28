@@ -12,21 +12,21 @@ import * as debug from 'debug';
 const log = debug('route');
 
 interface TimerState {
- [key: string]: NodeJS.Timer[];
+  [key : string] : NodeJS.Timer[];
 }
 
 const timerState : TimerState = {};
 
 export interface BeginRoutingCommand {
-  name: string;
-  streamId: string;
-  fromAddress: string;
-  waitInterval: number;
-  waitTimeout: number;
+  name : string;
+  streamId : string;
+  fromAddress : string;
+  waitInterval : number;
+  waitTimeout : number;
 }
 
 export class RoutingStartedEvent extends EntityEvent {
-  constructor(public readonly interactionId: string) {
+  constructor(public readonly interactionId : string) {
     super();
   }
 }
@@ -60,7 +60,7 @@ export class Route extends Entity {
   private interactionId : string;
   private complete : boolean;
 
-  private static getLastAddressComponent(address: string) {
+  private static getLastAddressComponent(address : string) {
     return address.split(/\//).pop();
   }
 
@@ -75,33 +75,29 @@ export class Route extends Entity {
   }
 
   public routeInteraction(interactionId : string, fromAddress : string,
-                   waitInterval : number = 1000,
-                   waitTimeout : number = 60000) {
+                          waitInterval : number = 1000,
+                          waitTimeout : number = 60000) {
     const timeout : NodeJS.Timer = setTimeout(() => {
-        this.dispatch(new RoutingFailedEvent(interactionId));
+      this.dispatch(new RoutingFailedEvent(interactionId));
     }, waitTimeout);
     const timer : NodeJS.Timer = setInterval(async () => {
-      if (this.complete) {
+      this.dispatch(new RoutingInProgressEvent(interactionId));
+      const workersState : WorkersState = this.workerService.getWorkersState();
+      const worker : WorkerState = Object.keys(workersState)
+        .map(id => workersState[id])
+        .filter(worker => {
+          return worker.status &&
+            worker.status !== 'offline' &&
+            worker.routingAddress &&
+            Route.getLastAddressComponent(worker.routingAddress) !== Route.getLastAddressComponent(fromAddress)
+        })[0];
+      log(`Locating worker for ${interactionId} from`, workersState);
+      if (worker) {
+        log(`Worker located for ${interactionId}`, worker);
         this.clearTimers();
-      } else {
-        this.dispatch(new RoutingInProgressEvent(interactionId));
-        const workersState : WorkersState = this.workerService.getWorkersState();
-        const worker : WorkerState = Object.keys(workersState)
-          .map(id => workersState[id])
-          .filter(worker => {
-            return worker.status &&
-              worker.status !== 'offline' &&
-              worker.routingAddress &&
-              Route.getLastAddressComponent(worker.routingAddress) !== Route.getLastAddressComponent(fromAddress)
-          })[0];
-        log(`Locating worker for ${interactionId} from`, workersState);
-        if (worker) {
-          log(`Worker located for ${interactionId}`, worker);
-          this.clearTimers();
-          this.dispatch(new RoutingCompleteEvent(
-            interactionId,
-            worker.routingAddress));
-        }
+        this.dispatch(new RoutingCompleteEvent(
+          interactionId,
+          worker.routingAddress));
       }
     }, waitInterval);
     log(`Setting timers for ${interactionId}`);
@@ -121,7 +117,7 @@ export class Route extends Entity {
       const timers : NodeJS.Timer[] = timerState[this.interactionId];
       log(`Clearing ${timers.length} timers`);
       delete timerState[this.interactionId];
-      while(timers.length > 0) {
+      while (timers.length > 0) {
         clearTimeout(timers.shift());
       }
     }
