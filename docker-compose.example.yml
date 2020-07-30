@@ -1,0 +1,9 @@
+version: '3'
+services:
+  example_flow:
+    image: node-open-cc-packages:latest
+    environment:
+      - SERVICES=/opt/app/packages/flow-agent/index.ts
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
+      - FLOW=/opt/app/examples/flow/flow.gliffy
+      - DEBUG=api-container:*

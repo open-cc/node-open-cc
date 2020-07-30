@@ -1,0 +1,17 @@
+version: '3'
+services:
+  interaction_api:
+    image: node-open-cc-packages:latest
+    build: .
+    environment:
+      - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
+      - DEBUG=api-container:*
+    ports:
+      - 8080:8080
+  routing_api:
+    image: node-open-cc-packages:latest
+    environment:
+      - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
+      - DEBUG=api-container:*

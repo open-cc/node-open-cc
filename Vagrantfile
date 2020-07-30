@@ -7,31 +7,53 @@ Vagrant.configure(2) do |config|
 
   machines = [{
     :name => 'kamailio-1',
-    :role => 'kamailio',
+    :roles => %w(kamailio nats),
     :address => '192.168.188.110'
   }, {
     :name => 'asterisk-1',
-    :role => 'asterisk',
+    :roles => %w(asterisk core example),
     :address => '192.168.188.111'
-  }]
+  }].map { |m|
+    m[:compose_files] = m[:roles]
+      .map { |role| "docker-compose.#{role}.yml" }
+      .select { |file| File.exist?(file) }
+    m
+  }
+
+  machines_by_role = machines
+    .map { |m| m[:roles] }
+    .flatten
+    .uniq
+    .reduce([]) { |by_role, role|
+      by_role << {
+        :role => role
+          .upcase
+          .gsub(/[^a-z0-9]+/i, '_'),
+        :machines => machines
+          .select { |m| m[:roles].include? role } }
+      by_role
+    }
+
+  machines.each { |m|
+    m[:env] = {
+      :CWD => '/project',
+      :COMPOSE_ARGS => m[:roles]
+        .map { |role| "docker-compose.#{role}.yml" }
+        .select { |file| File.exist?(file) }
+        .map { |file| "-f #{file}" }
+        .join(' '),
+      :MACHINE_KEY => Array.new(32) { [*'a'..'z', *'0'..'0'].sample }.join,
+      :PRIVATE_IPV4 => m[:address]
+    }
+    machines.each { |m1|
+      m[:env]["#{m[:name].upcase.gsub(/[^a-z0-9]+/i, '_')}_PRIVATE_IPV4"] = m1[:address]
+    }
+    machines_by_role.each { |role_group|
+      m[:env]["#{role_group[:role]}_PRIVATE_IPV4"] = role_group[:machines].map { |rm| rm[:address] }.join(' ')
+    }
+  }
 
   machines.each do |machine|
-
-    machine[:key] = Array.new(32){[*'a'..'z', *'0'..'0'].sample}.join
-
-    machines_by_role = machines
-      .map { |m| m[:role] }
-      .uniq
-      .reduce([]) { |by_role, role|
-        by_role << {
-          :role => role
-            .upcase
-            .gsub(/[^a-z0-9]+/i, '_'),
-          :machines => machines
-            .select { |m| m[:role] == role }
-            .select { |m| m[:name] != machine[:name] } }
-        by_role
-      }
 
     config.vm.define machine[:name] do |vm_config|
       vm_config.vm.hostname = machine[:name]
@@ -41,6 +63,7 @@ Vagrant.configure(2) do |config|
         vb.customize ['modifyvm', :id, '--nataliasmode1', 'proxyonly']
       end
       vm_config.vm.network 'private_network', ip: machine[:address]
+      vm_config.vm.provision :file, source: './dc.sh', destination: '/tmp/dc'
       vm_config.vm.provision :shell, inline: %Q[
 if ! which docker >> /dev/null; then
   sudo apt install apt-transport-https ca-certificates curl software-properties-common
@@ -59,21 +82,11 @@ sudo echo $'# vagranthosts\n#{machines
         .select { |m| m[:name] != machine[:name] }
         .map { |m| "#{m[:address]} #{m[:name]}\\n" }
         .join(" ")}' >> /etc/hosts
-sudo echo '#!/usr/bin/env bash' > /usr/local/bin/dc
-sudo echo 'export MACHINE_KEY="#{machine[:key]}"' >> /usr/local/bin/dc
-sudo echo $'#{machines
-        .select { |m| m[:name] == machine[:name] }
-        .map { |m| "export PRIVATE_IPV4=#{m[:address]}" }
-        .join('\\n')}' >> /usr/local/bin/dc
-sudo echo $'#{machines
-        .map { |m| "export #{m[:name].upcase.gsub(/[^a-z0-9]+/i, '_')}_PRIVATE_IPV4=#{m[:address]}" }
-        .join('\\n')}' >> /usr/local/bin/dc
-sudo echo $'#{machines_by_role
-        .map { |r| "export #{r[:role]}_PRIVATE_IPV4=#{r[:machines].map { |m| m[:address] }.join(' ')}" }.join('\\n')}' >> /usr/local/bin/dc
-sudo echo $'#{machines_by_role
-        .map { |r| "export #{r[:role]}_PEERS=#{r[:machines].map { |m| "#{m[:address]}:9742" }.join(',')}" }.join('\\n')}' >> /usr/local/bin/dc
-sudo echo $'cd /project\ndocker-compose -f docker-compose.#{machine[:role]}.yml $@' >> /usr/local/bin/dc
+sudo mv /tmp/dc /usr/local/bin/dc
 sudo chmod +x /usr/local/bin/dc
+]
+      vm_config.vm.provision :shell, privileged: false, inline: %Q[
+echo $'#{machine[:env].map { |name, value| "export #{name}=\"#{value}\"" }.join("\n")}' > $HOME/.dcrc
 ]
     end
   end

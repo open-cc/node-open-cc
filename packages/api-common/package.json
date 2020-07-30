@@ -29,6 +29,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@types/body-parser": "1.19.0",
     "body-parser": "1.19.0",
     "ddd-es-node": "0.3.106",
     "debug": "4.1.1",

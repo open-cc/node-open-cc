@@ -21,6 +21,7 @@ COPY ./packages/core-api/package.json ./packages/core-api/
 COPY ./packages/flow-agent/package.json ./packages/flow-agent/
 COPY ./packages/flow-processor/package.json ./packages/flow-processor/
 COPY ./packages/kamailio-agent/package.json ./packages/kamailio-agent/
+COPY ./packages/twilio-agent/package.json ./packages/twilio-agent/
 RUN npm run lerna:bootstrap
 
 COPY . .

@@ -21,6 +21,9 @@
 - http://www.evaristesys.com/blog/server-side-nat-traversal-with-kamailio-the-definitive-guide/
 - http://kb.asipto.com/asterisk:realtime:kamailio-4.0.x-asterisk-11.3.0-astdb
 
+# twilio
+- https://www.twilio.com/blog/multi-party-calls-voip-gsm-programmable-voice
+
 # connecting
 ```shell script
 pjsua --id sip:1001@$(ipconfig getifaddr en0) --username 1001 --local-port=5061 --app-log-level 3
@@ -35,7 +38,7 @@ curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/serv
 curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services | jq '.[] | "\(.stream) \(.endpoints[0].description)"'
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_workers"}' | jq
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_worker_address","workerId":"1002"}'
-curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers/1002 -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
+curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
 curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/interactions --data '{"name":"get"}' | jq
 curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/1234 --data '{"name":"started","interactionId":"1234","channel":"voice"}' | jq
 ```
@@ -51,6 +54,7 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] cleanup dispatcher list setup so it detects dead destinations
 - [x] integrate logic from example-stasis-app as generic capability
 - [x] make flow-processor adapter service generic
+- [ ] create separate compose for core apis
 - [ ] re-design model for routes
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
 - [ ] add app level error handling for nats replys if listener has an error

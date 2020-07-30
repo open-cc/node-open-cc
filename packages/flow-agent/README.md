@@ -1,3 +1,3 @@
-# @open-cc/asterisk-agent
+# @open-cc/flow-agent
 
-Integration adapter for asterisk
+Integration adapter for flows

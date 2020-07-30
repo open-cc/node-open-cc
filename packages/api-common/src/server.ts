@@ -33,7 +33,7 @@ const log : debug.Debugger = debug(`${logName}:container`);
 const shutdownHandlers : (() => Promise<void>)[] = [];
 
 function createMessageId() {
-  return `${Math.random().toString().slice(2,32)}`;
+  return `${Math.random().toString().slice(2, 32)}`;
 }
 
 export class StreamBound implements Stream {
@@ -213,6 +213,40 @@ export interface ApiRegConfigurator {
   (apiReg : ApiRegBound) : ApiRegBound;
 }
 
+function processHttpRequest(req, messageName : string) {
+  let messageBody = {...req.body};
+  if (messageName) {
+    messageBody = {
+      name: messageName,
+      payload: messageBody
+    }
+  }
+  return {
+    ...messageBody,
+    http: {
+      ...req.headers
+    }
+  };
+}
+
+function processHttpResponse(result : any, res) {
+  let status = 200;
+  let body = result;
+  if (result.http) {
+    if (result.http.status) {
+      status = result.http.status;
+    }
+    if (result.http.header) {
+      res.set(result.http.headers);
+    }
+    if (result.http.body) {
+      body = result.http.body;
+    }
+  }
+  delete result.http;
+  res.send(status, body);
+}
+
 export async function configure(apis : Api[],
                                 entityRepository : EntityRepository,
                                 eventBus : EventBus,
@@ -220,7 +254,7 @@ export async function configure(apis : Api[],
                                 httpPort : number,
                                 apiRegConfigurator? : ApiRegConfigurator) : Promise<ApiRegBound[]> {
   eventBus.subscribe(async (event : EntityEvent) => {
-    const eventJson = JSON.stringify({ ...event, m_uuid: event.uuid });
+    const eventJson = JSON.stringify({...event, m_uuid: event.uuid});
     log('Broadcasting', eventJson);
     try {
       natsConnection
@@ -243,24 +277,25 @@ export async function configure(apis : Api[],
   if (apiRegs.length > 0) {
     const app = express();
     app.use(bodyParser.json());
+    app.use(bodyParser.urlencoded());
     app.post('/api/broadcast/:streamName', async (req, res) => {
       const {streamName} = req.params;
+      const messageName = req.query.messageName;
       try {
-        const results = await apiRegs[0]
+        processHttpResponse((await apiRegs[0]
           .stream(streamName)
-          .broadcast(req.body);
-        res.send(results);
+          .broadcast(processHttpRequest(req, messageName))), res);
       } catch (err) {
         res.send(500, {error: err.message});
       }
     });
     app.post('/api/:streamName/:partitionKey', async (req, res) => {
       const {streamName, partitionKey} = req.params;
+      const messageName = req.query.messageName;
       try {
-        const result = await apiRegs[0]
+        processHttpResponse((await apiRegs[0]
           .stream(streamName)
-          .send(partitionKey, req.body);
-        res.send(result);
+          .send(partitionKey, processHttpRequest(req, messageName))), res);
       } catch (err) {
         res.send(500, {error: err.message});
       }
@@ -324,7 +359,7 @@ export function run() {
       });
       return <Api>(typeof required === 'function' ? required : required.default);
     });
-    await configure(apis, entityRepository, eventBus, natsConnection, 8080);
+    await configure(apis, entityRepository, eventBus, natsConnection, parseInt(process.env.HTTP_PORT || '8080', 10));
     log(`Registration complete ${services.join(', ')}`);
   }
 

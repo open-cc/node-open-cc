@@ -1,0 +1,19 @@
+version: '3'
+services:
+  twilio_agent:
+    image: node-open-cc-packages:latest
+    build: .
+    volumes:
+    - ./packages/twilio-agent:/opt/app/packages/twilio-agent
+    environment:
+      - SERVICES=/opt/app/packages/twilio-agent/index.ts
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
+      - FLOW=/opt/app/examples/flow/flow.gliffy
+      - HTTP_PORT=9999
+      - PUBLIC_URL
+      - TWILIO_NOTIFY_PHONE_NUMBER
+      - TWILIO_ACCOUNT_SID
+      - TWILIO_AUTH_TOKEN
+      - DEBUG=api-container:*
+    ports:
+      - 9999:9999

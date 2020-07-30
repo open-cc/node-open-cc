@@ -1,0 +1,18 @@
+{
+  "name": "@open-cc/twilio-agent",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Integration adapter for twilio",
+  "main": "index",
+  "scripts": {
+    "start": "./ngrok-serve.sh"
+  },
+  "dependencies": {
+    "@open-cc/api-common": "^0.0.0",
+    "@open-cc/core-api": "^0.0.0",
+    "@open-cc/flow-agent": "^0.0.0",
+    "@open-cc/flow-processor": "^0.0.0",
+    "ddd-es-node": "0.3.106",
+    "twilio": "3.48.1"
+  }
+}

@@ -13,32 +13,11 @@ services:
     image: node-open-cc-packages:latest
     build: .
     environment:
-      - SERVICES=/opt/app/packages/asterisk-agent/src/index.ts
+      - SERVICES=/opt/app/packages/asterisk-agent/index.ts
       - ASTERISK_URL=http://$${process.env.HOST_DOCKER_INTERNAL}:8088
       - ASTERISK_CREDS=ariUser:${MACHINE_KEY}
-      - NATS_SERVERS=nats://${KAMAILIO_PRIVATE_IPV4}:4222
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DISPATCH_ADDRESS=sip:${PRIVATE_IPV4}:5060
       - DEBUG=api-container:*
     depends_on:
       - asterisk
-  interaction_api:
-    image: node-open-cc-packages:latest
-    environment:
-      - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
-      - NATS_SERVERS=nats://${KAMAILIO_PRIVATE_IPV4}:4222
-      - DEBUG=api-container:*
-    ports:
-      - 8080:8080
-  routing_api:
-    image: node-open-cc-packages:latest
-    environment:
-      - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
-      - NATS_SERVERS=nats://${KAMAILIO_PRIVATE_IPV4}:4222
-      - DEBUG=api-container:*
-  example_flow:
-    image: node-open-cc-packages:latest
-    environment:
-      - SERVICES=/opt/app/packages/flow-agent/src/index.ts
-      - NATS_SERVERS=nats://${KAMAILIO_PRIVATE_IPV4}:4222
-      - FLOW=/opt/app/examples/flow/flow.gliffy
-      - DEBUG=api-container:*

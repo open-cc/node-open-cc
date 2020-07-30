@@ -12,12 +12,8 @@ services:
     environment:
       - SERVICES=/opt/app/packages/kamailio-agent/index.ts
       - KAMAILIO_URL=http://${PRIVATE_IPV4}:5060
-      - NATS_SERVERS=nats://${PRIVATE_IPV4}:4222
+      - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DEBUG=api-container:*
     depends_on:
       - kamailio
     network_mode: host
-  nats:
-    image: nats:alpine3.11
-    ports:
-      - 4222:4222

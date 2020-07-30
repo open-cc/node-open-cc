@@ -1,9 +1,9 @@
 {
-  "name": "@open-cc-examples/flow-agent",
+  "name": "@open-cc/flow-agent",
   "private": true,
   "version": "0.0.0",
-  "description": "Executes flows",
-  "main": "src/index",
+  "description": "Integration adapter for flows",
+  "main": "index",
   "dependencies": {
     "@open-cc/api-common": "^0.0.0",
     "@open-cc/core-api": "^0.0.0",
