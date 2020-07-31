@@ -16,7 +16,9 @@ const log = debug('');
 const flowModels : { [key : string] : FlowModel } = {};
 
 export function flowService(flowDefinition: string,
-                                          flowProcessorExecutorProvider : (apiDeps : ApiDeps) => FlowProcessExecutor) {
+                            flowProcessorExecutorProvider : (apiDeps : ApiDeps) => FlowProcessExecutor,
+                            onNext? : (streamId: string, next : FlowModel) => void) {
+  const flowServiceLog = log.extend('debug');
   return async function (apiDeps : ApiDeps) {
     if (flowDefinition) {
       fs.access(flowDefinition, fs_const.F_OK)
@@ -28,9 +30,16 @@ export function flowService(flowDefinition: string,
                   flowModels[event.streamId] = new FlowModel(getGraphs(JSON.parse(`${await fs.readFile(flowDefinition)}`))[0],
                     flowProcessorExecutorProvider(apiDeps));
                 }
-                log(`Flow ${flowModels[event.streamId].text} ${event.streamId} received`, JSON.stringify(event));
+                const currentText = flowModels[event.streamId].text;
+                flowServiceLog(`Flow ${flowModels[event.streamId].text} ${event.streamId} received`, JSON.stringify(event));
                 const next = await flowModels[event.streamId].receive(event);
-                log(`Next flow state ${next.text}`);
+                const nextText = next.text;
+                if (currentText !== nextText) {
+                  flowServiceLog(`Next flow state ${next.text}`);
+                  if (onNext) {
+                    await onNext(event.streamId, flowModels[event.streamId]);
+                  }
+                }
                 flowModels[event.streamId] = next;
               } catch (err) {
                 log(err);

@@ -26,7 +26,7 @@ export async function registerApp(
         phoneNumber: availablePhoneNumbers[0].phoneNumber,
       }));
   } else {
-    await incomingPhoneNumbers[0].update(config)
+    incomingPhoneNumbers[0] = await incomingPhoneNumbers[0].update(config)
   }
   return incomingPhoneNumbers[0];
 }

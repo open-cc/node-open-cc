@@ -6,4 +6,4 @@ services:
       - SERVICES=/opt/app/packages/flow-agent/index.ts
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - FLOW=/opt/app/examples/flow/flow.gliffy
-      - DEBUG=api-container:*
+      - DEBUG=${DEBUG:-api-container:*}

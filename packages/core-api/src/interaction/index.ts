@@ -17,7 +17,6 @@ export {
 } from './core/call';
 
 export default async ({stream, entityRepository, eventBus} : ApiDeps) => {
-  log('interaction-api started');
 
   const interactionServices : { voice : CallService } = {
     voice: new CallService(entityRepository)

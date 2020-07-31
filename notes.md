@@ -30,7 +30,12 @@ pjsua --id sip:1001@$(ipconfig getifaddr en0) --username 1001 --local-port=5061 
 pjsua --id sip:1002@192.168.188.110 --registrar sip:192.168.188.110 --username 1002 --local-port=5062 --app-log-level 3
 ./play-sound.sh 1002
 ```
-sip:23@192.168.188.110
+
+# start twilio example
+```shell script
+./dc.sh nats core ngrok twilio - up --build
+curl -s -H 'Content-Type: application/json' -X POST http://localhost:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "PSTN/+15555555555" }]}'
+```
 
 # apis
 ```shell script
@@ -40,7 +45,7 @@ curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_worker_address","workerId":"1002"}'
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
 curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/interactions --data '{"name":"get"}' | jq
-curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/1234 --data '{"name":"started","interactionId":"1234","channel":"voice"}' | jq
+curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/api/interactions/CAde58c2e007cb8789334aa81d293592fd --data '{"name":"ExternalInteractionInitiatedEvent","interactionId":"CAde58c2e007cb8789334aa81d293592fd","channel":"voice"}' | jq
 ```
 
 # todo
@@ -54,14 +59,14 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] cleanup dispatcher list setup so it detects dead destinations
 - [x] integrate logic from example-stasis-app as generic capability
 - [x] make flow-processor adapter service generic
-- [ ] create separate compose for core apis
+- [x] create separate compose for core apis
+- [x] implement twiml flow processor
 - [ ] re-design model for routes
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
 - [ ] add app level error handling for nats replys if listener has an error
 - [ ] handle requests and delayed registration - e.g. calling get_workers before worker apis registered
 - [ ] auto-register twilio trunk + number
     - [ ]  auto-ngrok setup for local dev env
-- [ ] implement twiml flow processor
 - [ ] terraform provisioning and scaling controller
 - [ ] integrate lets encrypt
 - [ ] fix stale message nodes causing timeouts

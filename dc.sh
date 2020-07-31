@@ -71,4 +71,6 @@ if [[ "${RUN_NGROK}" == "true" ]] && [[ "${1}" == "up" ]]; then
   export PUBLIC_URL
 fi
 
+export DEBUG=api-container:*,-api-container:*:debug
+
 docker-compose ${COMPOSE_ARGS} $@

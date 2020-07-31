@@ -105,7 +105,7 @@ describe('flow-processor', () => {
       expect(s1.text).toBe('EventA-store-storedData-a');
     });
     it('processes events sequentially', async () => {
-      executor.instantiate = async (type, ...args) => {
+      executor.instantiate = async (type) => {
         return {
           id: `${type}_1`, play: async () => {
             await delay(100);

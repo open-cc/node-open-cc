@@ -224,13 +224,17 @@ function processHttpRequest(req, messageName : string) {
   return {
     ...messageBody,
     http: {
-      ...req.headers
+      ...req.headers,
+      url: req.url,
+      params: req.params,
+      query: req.query
     }
   };
 }
 
 function processHttpResponse(result : any, res) {
   let status = 200;
+  result = result || {}
   let body = result;
   if (result.http) {
     if (result.http.status) {
@@ -244,7 +248,7 @@ function processHttpResponse(result : any, res) {
     }
   }
   delete result.http;
-  res.send(status, body);
+  res.status(status).send(body);
 }
 
 export async function configure(apis : Api[],
@@ -253,14 +257,15 @@ export async function configure(apis : Api[],
                                 natsConnection : Client,
                                 httpPort : number,
                                 apiRegConfigurator? : ApiRegConfigurator) : Promise<ApiRegBound[]> {
+  const eventBusLog = log.extend('debug');
   eventBus.subscribe(async (event : EntityEvent) => {
     const eventJson = JSON.stringify({...event, m_uuid: event.uuid});
-    log('Broadcasting', eventJson);
+    eventBusLog('Broadcasting', eventJson);
     try {
       natsConnection
         .publish('events-broadcast', eventJson);
     } catch (err) {
-      log('Failed to broadcast event', event, err);
+      eventBusLog('Failed to broadcast event', event, err);
     }
   }, {replay: false});
   const apiRegs : ApiRegBound[] = [];
@@ -277,7 +282,7 @@ export async function configure(apis : Api[],
   if (apiRegs.length > 0) {
     const app = express();
     app.use(bodyParser.json());
-    app.use(bodyParser.urlencoded());
+    app.use(bodyParser.urlencoded({ extended: true }));
     app.post('/api/broadcast/:streamName', async (req, res) => {
       const {streamName} = req.params;
       const messageName = req.query.messageName;
@@ -286,7 +291,7 @@ export async function configure(apis : Api[],
           .stream(streamName)
           .broadcast(processHttpRequest(req, messageName))), res);
       } catch (err) {
-        res.send(500, {error: err.message});
+        res.status(500).send({error: err.message});
       }
     });
     app.post('/api/:streamName/:partitionKey', async (req, res) => {
@@ -297,7 +302,7 @@ export async function configure(apis : Api[],
           .stream(streamName)
           .send(partitionKey, processHttpRequest(req, messageName))), res);
       } catch (err) {
-        res.send(500, {error: err.message});
+        res.status(500).send({error: err.message});
       }
     });
     await new Promise((resolve) => {

@@ -5,6 +5,7 @@
   "description": "Integration adapter for twilio",
   "main": "index",
   "scripts": {
+    "test": "jest",
     "start": "./ngrok-serve.sh"
   },
   "dependencies": {

@@ -18,12 +18,13 @@ import {
 import * as debug from 'debug';
 
 const log = debug('');
+const logDebug = log.extend('debug');
 
 const asteriskURL = envProp(() => process.env.ASTERISK_URL, 'http://asterisk:8088');
 const asteriskCredentials = process.env.ASTERISK_CREDS || '';
 
 export default async ({stream} : ApiDeps) => {
-  log('Connecting to', asteriskURL);
+  logDebug('Connecting to', asteriskURL);
 
   const connection : StasisConnection = await stasisConnect({
     url: asteriskURL,
@@ -49,7 +50,7 @@ export default async ({stream} : ApiDeps) => {
   }, 1000);
 
   async function hangupChannel(channel : Ari.Channel, message : string) {
-    log(message);
+    logDebug(message);
     try {
       await channel.hangup();
     } catch (err) {
@@ -68,9 +69,9 @@ export default async ({stream} : ApiDeps) => {
     });
 
   connection.registerStasisApp('example-stasis-app', async (stasisStartEvent : Ari.StasisStart, channel : Ari.Channel) => {
-    log('Started example-stasis-app on', asteriskURL);
+    logDebug('Started example-stasis-app on', asteriskURL);
     if (channel.caller.number === 'anonymous') {
-      log('Got anonymous call?');
+      logDebug('Got anonymous call?');
       await channel.answer();
     } else {
       await channel.answer();
@@ -78,19 +79,17 @@ export default async ({stream} : ApiDeps) => {
         await stream('interactions')
           .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
       });
-      log('StasisStartedEvent', stasisStartEvent);
+      logDebug('StasisStartedEvent', stasisStartEvent);
 
       await stream(channel.id)
         .on('bridge', async (command : any) => {
-
-          log('##asterisk##', command);
 
           // TODO, this should be started earlier ?...
           try {
             const channel : Ari.Channel = await connection.ari.channels.get({channelId: command.interactionId});
             const bridge = await connection.ari.Bridge(command.interactionId)
               .createWithId({type: 'mixing'});
-            log(`Created bridge ${bridge.id}`);
+            logDebug(`Created bridge ${bridge.id}`);
             await bridge.addChannel({channel: [channel.id]});
           } catch (err) {
             log('Error getting channel', err);
@@ -102,12 +101,12 @@ export default async ({stream} : ApiDeps) => {
             routingEndpoint = `SIP/${parts[2]}/${parts[1]}`;
           }
 
-          log('Routing to endpoint', routingEndpoint);
+          logDebug('Routing to endpoint', routingEndpoint);
 
           const bridge : Ari.Bridge = await connection.ari.bridges.get({bridgeId: command.interactionId});
           const channel : Ari.Channel = await connection.ari.channels.get({channelId: command.interactionId});
 
-          log('Got bridge and original channel');
+          logDebug('Got bridge and original channel');
 
           const dialed = connection.ari.Channel();
 
@@ -121,10 +120,10 @@ export default async ({stream} : ApiDeps) => {
 
           dialed.on('StasisStart', async (stasisStartEvent : Ari.StasisStart, dialed : Ari.Channel) => {
 
-            log(`${stasisStartEvent.application} started`);
+            logDebug(`${stasisStartEvent.application} started`);
 
             bridge.on('ChannelLeftBridge', async (event : Ari.ChannelLeftBridge, instances : Ari.ChannelLeftBridge) => {
-              log(`Channel ${instances.channel.name} has left the bridge`, dialed);
+              logDebug(`Channel ${instances.channel.name} has left the bridge`, dialed);
               if (instances.channel.name === dialed.name) {
                 await stream('interactions')
                   .send(connection.asteriskId,
@@ -136,14 +135,14 @@ export default async ({stream} : ApiDeps) => {
             });
 
             dialed.on('StasisEnd', async (event : Ari.StasisEnd, dialed : Ari.Channel) => {
-              log(
+              logDebug(
                 `Dialed channel ${dialed.name} has left our application`);
               // log(
               //   `Dialed channel ${dialed.name} has left our application, destroying bridge ${bridge.id}`);
               // await bridge.destroy();
             });
 
-            log('Waiting for dialed channel to answer');
+            logDebug('Waiting for dialed channel to answer');
 
             await dialed.answer();
 
@@ -153,7 +152,7 @@ export default async ({stream} : ApiDeps) => {
                   command.interactionId,
                   routingEndpoint));
 
-            log(`Dialed channel ${dialed.name} has answered`);
+            logDebug(`Dialed channel ${dialed.name} has answered`);
 
             await bridge.addChannel({channel: [dialed.id]});
           });
@@ -191,7 +190,7 @@ export default async ({stream} : ApiDeps) => {
               }
             }
           } catch (err) {
-            console.log(`Failed to get channel from`, command);
+            log(`Failed to get channel from`, command);
           }
         }).awaitRegistration();
 

@@ -9,7 +9,7 @@ import {
 } from './worker';
 import * as debug from 'debug';
 
-const log = debug('route');
+const log = debug('debug');
 
 interface TimerState {
   [key : string] : NodeJS.Timer[];

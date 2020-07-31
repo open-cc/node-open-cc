@@ -7,6 +7,7 @@ import * as debug from 'debug';
 import {UpdateWorkerRegistration} from '@open-cc/core-api';
 
 const log = debug('');
+const logDebug = log.extend('debug');
 const kamailioBaseUrl = envProp(() => process.env.KAMAILIO_URL, 'http://kamailio:5060');
 const kamailioRpcEndpoint = `${kamailioBaseUrl}/RPC`;
 
@@ -102,7 +103,7 @@ export default async ({stream} : ApiDeps) => {
         return;
       }
       prevContacts = contacts;
-      log('Got contacts', JSON.stringify(contacts, null, 2));
+      logDebug('Got contacts', JSON.stringify(contacts, null, 2));
       const removeContacts = [];
       for (const contact of contacts) {
         contactsCache[contact.Contact.Address] = {

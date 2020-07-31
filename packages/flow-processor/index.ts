@@ -27,6 +27,8 @@ export interface FlowObject {
 }
 
 export interface FlowProcessExecutor {
+  before?();
+
   execute(command : string, ...args : any[]) : Promise<any>;
 
   instantiate(type : string, ...args : any[]) : Promise<FlowObject>;
@@ -128,7 +130,7 @@ export class FlowModel implements FlowElementHeader {
   private isProcessing : boolean = false;
   private queuedEvents : any[] = [];
   constructor(private readonly graph : FlowElement,
-              private readonly executor : FlowProcessExecutor,
+              private readonly _executor : FlowProcessExecutor,
               private readonly _context : FlowContext = {
                 eventsReceived: {},
                 data: {}
@@ -137,11 +139,18 @@ export class FlowModel implements FlowElementHeader {
     this.parseArg = this.parseArg.bind(this);
   }
 
+  public get executor() {
+    return this._executor;
+  }
+
   public get context() {
     return JSON.parse(JSON.stringify(this._context));
   }
 
   async receive(event : any) : Promise<FlowModel> {
+    if (this._executor.before) {
+      this._executor.before();
+    }
     return this.sendEvent(await this.next(this), event);
   }
 
@@ -165,7 +174,7 @@ export class FlowModel implements FlowElementHeader {
           transition.to.text = this.evaluateText(transition.to.text);
           this._context.eventsReceived[event.name] = model._context.eventsReceived[event.name] || [];
           this._context.eventsReceived[event.name].push(event);
-          nextModel = await model.next(new FlowModel(transition.to, model.executor, model._context));
+          nextModel = await model.next(new FlowModel(transition.to, model._executor, model._context));
         }
       }
       while (model.queuedEvents.length > 0) {
@@ -198,7 +207,7 @@ export class FlowModel implements FlowElementHeader {
             const type = firstArg;
             if (!transitionToNode._flowObject) {
               // Store instance of instantiated object on transition.to process node
-              transitionToNode._flowObject = await model.executor.instantiate(type, ...rest);
+              transitionToNode._flowObject = await model._executor.instantiate(type, ...rest);
             }
             // Call the command on the instantiated object
             if (transitionToNode._flowObject[command]) {
@@ -210,7 +219,7 @@ export class FlowModel implements FlowElementHeader {
             description.push(type);
           } else {
             const command = firstArg;
-            await model.executor.execute(command, ...rest);
+            await model._executor.execute(command, ...rest);
             description.push(command);
           }
           break;
@@ -234,12 +243,12 @@ export class FlowModel implements FlowElementHeader {
         const nextFlow = await this.next(new FlowModel({
           ...(transition.to),
           text: description.join('-')
-        }, model.executor, model._context));
+        }, model._executor, model._context));
         nextFlowTransitions.text = [model.text, nextFlow.text].join('-');
         nextFlowTransitions.transitions = [...nextFlowTransitions.transitions, ...nextFlow.graph.transitions];
       }
       sortTransitions(nextFlowTransitions.transitions);
-      return new FlowModel(nextFlowTransitions, model.executor, model._context);
+      return new FlowModel(nextFlowTransitions, model._executor, model._context);
     }
     return model;
   }
