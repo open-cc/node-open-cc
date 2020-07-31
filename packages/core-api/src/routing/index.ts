@@ -34,7 +34,7 @@ export default async ({stream, entityRepository} : ApiDeps) => {
 
   stream('routing')
     .on('route', async (command : BeginRoutingCommand) => {
-      log(`Received ${command.name}: routing interaction ${command.streamId}`, command);
+      log(`Received ${command.name}: routing interaction ${command.streamId} %O`, command);
       const route : Route = await entityRepository
         .load(Route, command.streamId, workerService);
       await route.routeInteraction(

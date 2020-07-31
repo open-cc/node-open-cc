@@ -15,5 +15,6 @@ services:
       - TWILIO_ACCOUNT_SID
       - TWILIO_AUTH_TOKEN
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true
     ports:
       - 9999:9999

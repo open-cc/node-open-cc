@@ -7,3 +7,4 @@ services:
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - FLOW=/opt/app/examples/flow/flow.gliffy
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true

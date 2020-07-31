@@ -7,6 +7,7 @@ services:
       - SERVICES=/opt/app/packages/core-api/src/interaction/index.ts
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true
     ports:
       - 8080:8080
   routing_api:
@@ -15,3 +16,4 @@ services:
       - SERVICES=/opt/app/packages/core-api/src/routing/index.ts
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true

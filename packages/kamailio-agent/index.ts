@@ -15,7 +15,7 @@ const dispatcherDestinations = [];
 async function updateDispatcherList(rpcEndpoint, destination) {
   if (dispatcherDestinations.indexOf(destination) === -1) {
     dispatcherDestinations.push(destination);
-    log('updateDispatcherList', dispatcherDestinations);
+    log('updateDispatcherList %O', dispatcherDestinations);
     const newDispatcherList = dispatcherDestinations
       .map((server, index) => `${index + 1} ${server} 0 0 weight=50`)
       .join('\n');
@@ -103,7 +103,7 @@ export default async ({stream} : ApiDeps) => {
         return;
       }
       prevContacts = contacts;
-      logDebug('Got contacts', JSON.stringify(contacts, null, 2));
+      logDebug('Got contacts %O', contacts);
       const removeContacts = [];
       for (const contact of contacts) {
         contactsCache[contact.Contact.Address] = {

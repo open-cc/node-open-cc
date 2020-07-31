@@ -31,7 +31,7 @@ export function flowService(flowDefinition: string,
                     flowProcessorExecutorProvider(apiDeps));
                 }
                 const currentText = flowModels[event.streamId].text;
-                flowServiceLog(`Flow ${flowModels[event.streamId].text} ${event.streamId} received`, JSON.stringify(event));
+                flowServiceLog(`Flow ${flowModels[event.streamId].text} ${event.streamId} received %o`, event);
                 const next = await flowModels[event.streamId].receive(event);
                 const nextText = next.text;
                 if (currentText !== nextText) {

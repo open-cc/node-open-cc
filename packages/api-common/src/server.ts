@@ -69,7 +69,7 @@ export class StreamBound implements Stream {
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T[];
     } catch (err) {
-      log(`Error parsing data: ${msg.data}`, msg, err);
+      log(`Error parsing data: ${msg.data} - %o`, msg, err);
       throw err;
     }
   }
@@ -82,7 +82,7 @@ export class StreamBound implements Stream {
     try {
       return (msg.data && msg.data.length > 0 ? JSON.parse(msg.data) : null) as any as T;
     } catch (err) {
-      log(`Error parsing data: ${msg.data}`, msg, err);
+      log(`Error parsing data: ${msg.data} - %o`, msg, err);
       throw err;
     }
   }
@@ -143,7 +143,7 @@ export class ApiRegBound implements ApiDeps {
                 await self.invokeHandler(stream, 'after', data, header);
               }
             } catch (err) {
-              log(`Error invoking handler - ${stream}`, data, err);
+              log(`Error invoking handler - ${stream} - %o`, data, err);
               if (msg.reply) {
                 this.natsConnection.publish(msg.reply, JSON.stringify({
                   type: 'error',
@@ -157,7 +157,7 @@ export class ApiRegBound implements ApiDeps {
         await this.makeSubscription(`${stream}-queue-group`, msgCallback, {queue: `${stream}-qg`});
       }
       if (handlerStreams.length > 0) {
-        log(`Registered streams: [${handlerStreams.join(', ')}]`);
+        log('Registered streams: %o', handlerStreams);
       }
     })());
   }
@@ -259,13 +259,14 @@ export async function configure(apis : Api[],
                                 apiRegConfigurator? : ApiRegConfigurator) : Promise<ApiRegBound[]> {
   const eventBusLog = log.extend('debug');
   eventBus.subscribe(async (event : EntityEvent) => {
-    const eventJson = JSON.stringify({...event, m_uuid: event.uuid});
-    eventBusLog('Broadcasting', eventJson);
+    const eventWithMessageId = {...event, m_uuid: event.uuid};
+    const eventJson = JSON.stringify(eventWithMessageId);
+    eventBusLog('Broadcasting %o', eventWithMessageId);
     try {
       natsConnection
         .publish('events-broadcast', eventJson);
     } catch (err) {
-      eventBusLog('Failed to broadcast event', event, err);
+      eventBusLog('Failed to broadcast event - %o', eventWithMessageId, err);
     }
   }, {replay: false});
   const apiRegs : ApiRegBound[] = [];
@@ -332,7 +333,7 @@ async function getNatsConnection(attempts : number = 1000) {
   while (!natsConnection && attempts > 0) {
     try {
       const servers = (process.env.NATS_SERVERS || '').split(/,[ ]+/);
-      log(`Connecting to nats servers ${servers.join(', ')}`);
+      log('Connecting to nats servers %o', servers);
       natsConnection = await connect({servers})
     } catch (err) {
       attempts--;

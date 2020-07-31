@@ -50,7 +50,7 @@ export default async ({stream} : ApiDeps) => {
   }, 1000);
 
   async function hangupChannel(channel : Ari.Channel, message : string) {
-    logDebug(message);
+    logDebug('%O', message);
     try {
       await channel.hangup();
     } catch (err) {
@@ -79,7 +79,7 @@ export default async ({stream} : ApiDeps) => {
         await stream('interactions')
           .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
       });
-      logDebug('StasisStartedEvent', stasisStartEvent);
+      logDebug('StasisStartedEvent %O', stasisStartEvent);
 
       await stream(channel.id)
         .on('bridge', async (command : any) => {
@@ -123,7 +123,7 @@ export default async ({stream} : ApiDeps) => {
             logDebug(`${stasisStartEvent.application} started`);
 
             bridge.on('ChannelLeftBridge', async (event : Ari.ChannelLeftBridge, instances : Ari.ChannelLeftBridge) => {
-              logDebug(`Channel ${instances.channel.name} has left the bridge`, dialed);
+              logDebug(`Channel ${instances.channel.name} has left the bridge %O`, dialed);
               if (instances.channel.name === dialed.name) {
                 await stream('interactions')
                   .send(connection.asteriskId,

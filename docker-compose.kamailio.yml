@@ -14,6 +14,7 @@ services:
       - KAMAILIO_URL=http://${PRIVATE_IPV4}:5060
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true
     depends_on:
       - kamailio
     network_mode: host

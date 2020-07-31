@@ -136,7 +136,7 @@ export default async (apiDeps : ApiDeps) => {
     .stream('twilio')
     .on('call', async (msg : any) => {
 
-      logDebug(msg);
+      logDebug('%O', msg);
 
       // Register subscription for twiml
       const twimlPromise = onEvent(buildTwimlPreparedSubject(msg.payload.CallSid));

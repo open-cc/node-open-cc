@@ -19,5 +19,6 @@ services:
       - NATS_SERVERS=nats://${NATS_PRIVATE_IPV4}:4222
       - DISPATCH_ADDRESS=sip:${PRIVATE_IPV4}:5060
       - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true
     depends_on:
       - asterisk
