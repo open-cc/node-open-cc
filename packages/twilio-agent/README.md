@@ -1,3 +1,3 @@
 # @open-cc/twilio-agent
 
-Integration adapter for twilio
+Integration adapter for twilio.

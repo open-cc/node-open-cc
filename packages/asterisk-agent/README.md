@@ -1,3 +1,3 @@
 # @open-cc/asterisk-agent
 
-Integration adapter for asterisk
+Integration adapter for asterisk.

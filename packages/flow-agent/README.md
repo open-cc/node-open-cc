@@ -1,3 +1,3 @@
 # @open-cc/flow-agent
 
-Integration adapter for flows
+Integration adapter for flows.
