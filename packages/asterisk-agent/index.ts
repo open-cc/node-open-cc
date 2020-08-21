@@ -23,7 +23,7 @@ const logDebug = log.extend('debug');
 const asteriskURL = envProp(() => process.env.ASTERISK_URL, 'http://asterisk:8088');
 const asteriskCredentials = process.env.ASTERISK_CREDS || '';
 
-export default async ({stream} : ApiDeps) => {
+export default async ({subject} : ApiDeps) => {
   logDebug('Connecting to', asteriskURL);
 
   const connection : StasisConnection = await stasisConnect({
@@ -36,7 +36,7 @@ export default async ({stream} : ApiDeps) => {
   setInterval(async () => {
     if (process.env.DISPATCH_ADDRESS) {
       try {
-        await stream('dispatcherlist')
+        await subject('dispatcherlist')
           .broadcast({
             name: 'DestinationReported',
             address: process.env.DISPATCH_ADDRESS
@@ -58,14 +58,14 @@ export default async ({stream} : ApiDeps) => {
     }
   }
 
-  stream('events')
+  subject('events')
     .on(RoutingFailedEvent, async (event : RoutingFailedEvent) => {
       const channel : Ari.Channel = await connection.ari.channels.get({channelId: event.interactionId});
       await channel.hangup();
-      // TODO - unregister stream(event.interactionId)
+      // TODO - unregister subject(event.interactionId)
     })
     .on(InteractionEndedEvent, async (event : InteractionEndedEvent) => {
-      await stream(event.streamId).unbind();
+      await subject(event.streamId).unbind();
     });
 
   connection.registerStasisApp('example-stasis-app', async (stasisStartEvent : Ari.StasisStart, channel : Ari.Channel) => {
@@ -76,12 +76,12 @@ export default async ({stream} : ApiDeps) => {
     } else {
       await channel.answer();
       channel.once('StasisEnd', async (stasisEndEvent : Ari.StasisEnd, channel : Ari.Channel) => {
-        await stream('interactions')
+        await subject('interactions')
           .send(connection.asteriskId, new ExternalInteractionEndedEvent(channel.id));
       });
       logDebug('StasisStartedEvent %O', stasisStartEvent);
 
-      await stream(channel.id)
+      await subject(channel.id)
         .on('bridge', async (command : any) => {
 
           // TODO, this should be started earlier ?...
@@ -125,7 +125,7 @@ export default async ({stream} : ApiDeps) => {
             bridge.on('ChannelLeftBridge', async (event : Ari.ChannelLeftBridge, instances : Ari.ChannelLeftBridge) => {
               logDebug(`Channel ${instances.channel.name} has left the bridge %O`, dialed);
               if (instances.channel.name === dialed.name) {
-                await stream('interactions')
+                await subject('interactions')
                   .send(connection.asteriskId,
                     new ExternalInteractionPartyLeftEvent(
                       command.interactionId,
@@ -146,7 +146,7 @@ export default async ({stream} : ApiDeps) => {
 
             await dialed.answer();
 
-            await stream('interactions')
+            await subject('interactions')
               .send(connection.asteriskId,
                 new ExternalInteractionPartyJoinedEvent(
                   command.interactionId,
@@ -194,7 +194,7 @@ export default async ({stream} : ApiDeps) => {
           }
         }).awaitRegistration();
 
-      await stream('interactions')
+      await subject('interactions')
         .send(connection.asteriskId,
           await new ExternalInteractionInitiatedEvent(
             channel.id,

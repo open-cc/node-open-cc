@@ -4,3 +4,15 @@ services:
     image: nats:alpine3.11
     ports:
       - 4222:4222
+  nats_agent:
+    image: node-open-cc-packages:latest
+    build: .
+    network_mode: 'service:nats'
+    depends_on:
+      - nats
+    environment:
+      - SERVICES=/opt/app/packages/api-common/src/noop.ts
+      - NATS_SERVERS=nats://localhost:4222
+      - NATS_MONITOR_URL=http://localhost:8222/connz?subs=1
+      - DEBUG=${DEBUG:-api-container:*}
+      - DEBUG_COLORS=true

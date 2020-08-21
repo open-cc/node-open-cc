@@ -36,11 +36,11 @@ pjsua --id sip:1002@192.168.188.110 --registrar sip:192.168.188.110 --username 1
 ./dc.sh nats core ngrok twilio - up --build
 curl -s -H 'Content-Type: application/json' -X POST http://localhost:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "PSTN/+15555555555" }]}'
 ```
-
 # apis
 ```shell script
-curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services
-curl -s -H 'Content-Type: application/json' http://192.168.188.110:8080/api/services | jq '.[] | "\(.stream) \(.endpoints[0].description)"'
+curl -s -H 'Content-Type: application/json' -X POST http://localhost:8080/api/broadcast/workers -d '{"name":"get_workers"}' | jq
+curl -s -H 'content-type: application/json' -X POST http://localhost:8080/api/broadcast/interactions --data '{"name":"get"}' | jq
+
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_workers"}' | jq
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{"name":"get_worker_address","workerId":"1002"}'
 curl -s -H 'Content-Type: application/json' -X POST http://192.168.188.110:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "SIP/cluster/123" }]}'
@@ -61,6 +61,10 @@ curl -s -H 'content-type: application/json' -X POST http://192.168.188.110:8080/
 - [x] make flow-processor adapter service generic
 - [x] create separate compose for core apis
 - [x] implement twiml flow processor
+- [ ] handle aggregate node stickiness/affinity - options:
+    - get connections from http://localhost:8222/connz?subs=1 on nats server
+    - hashring
+    - or lifecycle subscriptions bound to ${entity-type}-{entity-id}
 - [ ] re-design model for routes
 - [ ] kamailio-agent will not advertise workers to restarted router-api because it thinks its already registered 
 - [ ] add app level error handling for nats replys if listener has an error

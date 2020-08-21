@@ -14,13 +14,13 @@ class StreamFlowProcessExecutor implements FlowProcessExecutor {
     switch (command) {
       case 'route': {
         const event = args[0];
-        await this.apiDeps.stream('routing')
+        await this.apiDeps.subject('routing')
           .send(event.streamId, {...event, name: command});
         break;
       }
       case 'bridge': {
         const interactionId = args[0];
-        await this.apiDeps.stream(interactionId)
+        await this.apiDeps.subject(interactionId)
           .send(interactionId, {
             name: 'bridge',
             endpoint: args[1],
@@ -37,10 +37,10 @@ class StreamFlowProcessExecutor implements FlowProcessExecutor {
         return {
           id: 'moh',
           play: async (interactionId) => {
-            await this.apiDeps.stream(interactionId)
+            await this.apiDeps.subject(interactionId)
               .send(interactionId, {name: 'startMoh', interactionId})
           },
-          stop: async (interactionId) => this.apiDeps.stream(interactionId)
+          stop: async (interactionId) => this.apiDeps.subject(interactionId)
             .send(interactionId, {name: 'stopMoh', interactionId})
         } as FlowObject;
     }

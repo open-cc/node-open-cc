@@ -89,9 +89,9 @@ function parseAddress(address) {
   throw new Error(`Failed to parse address '${address}'`);
 }
 
-export default async ({stream} : ApiDeps) => {
+export default async ({subject} : ApiDeps) => {
 
-  stream('dispatcherlist')
+  subject('dispatcherlist')
     .on('DestinationReported', async (message : any) => {
       await updateDispatcherList(kamailioRpcEndpoint, message.address);
     });
@@ -111,7 +111,7 @@ export default async ({stream} : ApiDeps) => {
           active: true
         };
       }
-      await stream('workers').broadcast(new UpdateWorkerRegistration(Object.keys(contactsCache)
+      await subject('workers').broadcast(new UpdateWorkerRegistration(Object.keys(contactsCache)
         .map((contactsCacheKey) => {
           const cachedContact = contactsCache[contactsCacheKey]
           if (!cachedContact.active) {

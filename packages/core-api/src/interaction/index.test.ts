@@ -16,7 +16,7 @@ describe('interaction-api', () => {
   afterEach(async () => await apiDeps.shutdown());
   it('initiates calls', async () => {
     await apiDeps
-      .stream('interactions')
+      .subject('interactions')
       .send('123', new ExternalInteractionInitiatedEvent(
         '123',
         'voice',
@@ -31,7 +31,7 @@ describe('interaction-api', () => {
   });
   it('ends calls', async () => {
     await apiDeps
-      .stream('interactions')
+      .subject('interactions')
       .send('123', new ExternalInteractionEndedEvent('123'));
     await wait(1);
     expect(apiDeps.eventFired)
@@ -41,7 +41,7 @@ describe('interaction-api', () => {
   });
   it('gets interactions', async () => {
     await apiDeps
-      .stream('interactions')
+      .subject('interactions')
       .send('123', new ExternalInteractionInitiatedEvent(
         '123',
         'voice',
@@ -49,7 +49,7 @@ describe('interaction-api', () => {
         '+15555555554'));
     await wait(1);
     const res = await apiDeps
-      .stream('interactions')
+      .subject('interactions')
       .send('', {
         name: 'get'
       });

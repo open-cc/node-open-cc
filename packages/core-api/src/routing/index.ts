@@ -1,7 +1,5 @@
 import {ApiDeps} from '@open-cc/api-common';
-import {
-  InteractionEndedEvent
-} from '../';
+import {InteractionEndedEvent} from '../';
 import {
   UpdateWorkerRegistration,
   WorkerService,
@@ -15,14 +13,12 @@ import * as debug from 'debug';
 
 const log = debug('');
 
-export let workerService : WorkerService;
+export default async ({subject, entityRepository} : ApiDeps) => {
 
-export default async ({stream, entityRepository} : ApiDeps) => {
+  const workerService = new WorkerService(entityRepository);
 
-  workerService = new WorkerService(entityRepository);
-
-  stream('events')
-    .on('before', async (event : any) => {
+  subject('events')
+    .before(async (event : any) => {
       workerService.handleMessage(event);
     })
     .on(InteractionEndedEvent, async (event : InteractionEndedEvent) => {
@@ -32,7 +28,7 @@ export default async ({stream, entityRepository} : ApiDeps) => {
       await route.cancel();
     });
 
-  stream('routing')
+  subject('routing')
     .on('route', async (command : BeginRoutingCommand) => {
       log(`Received ${command.name}: routing interaction ${command.streamId} %O`, command);
       const route : Route = await entityRepository
@@ -44,17 +40,17 @@ export default async ({stream, entityRepository} : ApiDeps) => {
         command.waitTimeout);
     });
 
-  stream('workers')
+  subject('workers')
     .on(UpdateWorkerRegistration, async (message : UpdateWorkerRegistration) => {
       try {
         await Promise.all((message.registrations || [])
           .map((registration) => {
             return workerService
               .updateWorkerRegistration(
-                  registration.workerId,
-                  registration.address,
-                  registration.routingAddress,
-                  registration.connected);
+                registration.workerId,
+                registration.address,
+                registration.routingAddress,
+                registration.connected);
           }));
         return {message: 'Success'}
       } catch (err) {

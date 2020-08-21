@@ -1,4 +1,7 @@
-import {ApiDeps} from '@open-cc/api-common';
+import {
+  ApiDeps,
+  HttpMessage
+} from '@open-cc/api-common';
 import {
   FlowModel,
   FlowObject,
@@ -56,10 +59,10 @@ class TwimlFlowProcessExecutor implements FlowProcessExecutor {
       case 'route': {
         const event = args[0];
         this.twimlBuilder.conference(event.streamId, {
-          statusCallback: buildUrl('api/broadcast/twilio?messageName=status_callback'),
+          statusCallback: buildUrl(`api/twilio/${encodeURIComponent('{body.CallSID}')}?messageName=status_callback`),
           statusCallbackEvent: ['leave', 'join']
         });
-        await this.apiDeps.stream('routing')
+        await this.apiDeps.subject('routing')
           .send(event.streamId, {...event, name: command});
         break;
       }
@@ -73,7 +76,7 @@ class TwimlFlowProcessExecutor implements FlowProcessExecutor {
             to: endpoint,
             twiml: TwimlBuilder.create().conference(interactionId, {
               waitUrl: '',
-              statusCallback: buildUrl('api/broadcast/twilio?messageName=status_callback'),
+              statusCallback: buildUrl(`api/twilio/${encodeURIComponent('{body.CallSID}')}?messageName=status_callback`),
               statusCallbackEvent: ['leave']
             }).buildVoiceResponse().toString()
           });
@@ -118,8 +121,8 @@ export default async (apiDeps : ApiDeps) => {
   const twilioClient = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
   const incomingPhoneNumber = await registerApp(twilioClient,
-    buildUrl('api/broadcast/twilio?messageName=call'),
-    buildUrl('api/broadcast/twilio?messageName=status_callback'));
+    buildUrl(`api/twilio/${encodeURIComponent('{body.CallSID}')}?messageName=call`),
+    buildUrl(`api/twilio/${encodeURIComponent('{body.CallSID}')}?messageName=status_callback`));
 
   log('Registered phone number', incomingPhoneNumber);
 
@@ -133,17 +136,34 @@ export default async (apiDeps : ApiDeps) => {
   }
 
   apiDeps
-    .stream('twilio')
-    .on('call', async (msg : any) => {
-
-      logDebug('%O', msg);
-
+    .subject('twilio')
+    .on('before', (msg : HttpMessage<any>) => {
+      log('%O', msg);
+      const twilioSignature = msg.http.headers['x-twilio-signature'] as string;
+      if (!twilio.validateRequest(
+        TWILIO_AUTH_TOKEN,
+        twilioSignature,
+        msg.http.publicUrl,
+        msg.payload || {}
+      )) {
+        log('twilio request validation failed - ', twilioSignature, msg.http.publicUrl, msg.payload || {});
+        return {
+          http: {
+            status: 401,
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: {}
+          }
+        }
+      }
+    })
+    .on('call', async (msg : HttpMessage<any>) => {
       // Register subscription for twiml
       const twimlPromise = onEvent(buildTwimlPreparedSubject(msg.payload.CallSid));
-
       // Notify interactions api of call
       await apiDeps
-        .stream('interactions')
+        .subject('interactions')
         .send(msg.payload.CallSid, new ExternalInteractionInitiatedEvent(msg.payload.CallSid,
           'voice',
           msg.payload.Caller,
@@ -151,7 +171,7 @@ export default async (apiDeps : ApiDeps) => {
 
       const twiml = await twimlPromise;
 
-      logDebug('got twiml for', msg.http.url, twiml);
+      log('got twiml for', msg.http.url, twiml);
 
       // Return twiml response
       return {
@@ -166,7 +186,7 @@ export default async (apiDeps : ApiDeps) => {
     .on('status_callback', async (msg : any) => {
       if (msg.payload.CallStatus === 'completed') {
         // Notify interaction ended
-        await apiDeps.stream('interactions')
+        await apiDeps.subject('interactions')
           .send(msg.payload.CallSid, new ExternalInteractionEndedEvent(msg.payload.CallSid));
       }
       return {

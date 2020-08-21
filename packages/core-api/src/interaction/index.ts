@@ -16,7 +16,7 @@ export {
   CallInitiatedEvent,
 } from './core/call';
 
-export default async ({stream, entityRepository, eventBus} : ApiDeps) => {
+export default async ({subject, entityRepository, eventBus} : ApiDeps) => {
 
   const interactionServices : { voice : CallService } = {
     voice: new CallService(entityRepository)
@@ -24,7 +24,7 @@ export default async ({stream, entityRepository, eventBus} : ApiDeps) => {
 
   projections.init(eventBus);
 
-  stream('interactions')
+  subject('interactions')
     .on(ExternalInteractionInitiatedEvent, async (message : ExternalInteractionInitiatedEvent) => {
       if ('voice' === message.channel) {
         await interactionServices

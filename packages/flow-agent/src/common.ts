@@ -15,16 +15,16 @@ const log = debug('');
 
 const flowModels : { [key : string] : FlowModel } = {};
 
-export function flowService(flowDefinition: string,
+export function flowService(flowDefinition : string,
                             flowProcessorExecutorProvider : (apiDeps : ApiDeps) => FlowProcessExecutor,
-                            onNext? : (streamId: string, next : FlowModel) => void) {
+                            onNext? : (streamId : string, next : FlowModel) => void) {
   const flowServiceLog = log.extend('debug');
   return async function (apiDeps : ApiDeps) {
     if (flowDefinition) {
       fs.access(flowDefinition, fs_const.F_OK)
         .then(() => {
-          apiDeps.stream('events')
-            .on('*', async (event : EntityEvent) => {
+          apiDeps.subject('events')
+            .before(async (event : EntityEvent) => {
               try {
                 if (!flowModels[event.streamId]) {
                   flowModels[event.streamId] = new FlowModel(getGraphs(JSON.parse(`${await fs.readFile(flowDefinition)}`))[0],

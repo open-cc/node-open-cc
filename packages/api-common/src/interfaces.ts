@@ -3,40 +3,26 @@ import {
   EventBus
 } from 'ddd-es-node';
 
+import {
+  Subject
+} from 'meshage';
+
 export interface ApiDeps {
-  stream(stream : string) : Stream;
+  subject(stream : string) : Subject;
   entityRepository : EntityRepository;
   eventBus : EventBus;
   shutdown(): Promise<void>;
 }
 
-export interface MessageHeader {
-  stream: string;
-  partitionKey?: string;
-}
-
-export interface Message extends MessageHeader {}
-
-
-export interface MessageHandler<T> {
-  (data? : T, header? : MessageHeader) : any;
-}
-
-export type ConstructorOf<T> = new (...args: any[]) => T;
-
-export interface Stream {
-  on<T>(name : (string | ConstructorOf<T>), handler : MessageHandler<T>) : Stream;
-
-  awaitRegistration() : Promise<void>;
-
-  broadcast<T>(message : any) : Promise<T[]>;
-
-  send<T>(partitionKey: string, message : any) : Promise<T>;
-
-  unbind() : Promise<void>;
-}
-
 export interface Api {
   (reg : ApiDeps) : void;
 }
+
+export {
+  Subject,
+  SubjectMessageHeader as MessageHeader,
+  SubjectMessage as Message,
+  HttpMessage,
+  HttpMessageHeader
+} from 'meshage';
 
