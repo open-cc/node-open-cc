@@ -12,6 +12,7 @@ const kamailioBaseUrl = envProp(() => process.env.KAMAILIO_URL, 'http://kamailio
 const kamailioRpcEndpoint = `${kamailioBaseUrl}/RPC`;
 
 const dispatcherDestinations = [];
+
 async function updateDispatcherList(rpcEndpoint, destination) {
   if (dispatcherDestinations.indexOf(destination) === -1) {
     dispatcherDestinations.push(destination);
@@ -37,6 +38,7 @@ async function updateDispatcherList(rpcEndpoint, destination) {
 
 const contactsCache = {};
 let prevContacts = [];
+
 async function getContacts(rpcEndpoint) {
   const res = await fetch(rpcEndpoint, {
     method: 'POST',
@@ -128,7 +130,7 @@ export default async ({subject} : ApiDeps) => {
             address: `${address.protocol}:${address.user}@${address.domain}:${address.port}`,
             routingAddress: `${address.protocol}:${address.user}@${proxy.domain}:${proxy.port}`
           }
-        })));
+        })), {wait: false});
       for (const removeContact of removeContacts) {
         delete contactsCache[removeContact];
       }

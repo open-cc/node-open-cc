@@ -1,6 +1,6 @@
 import {
   ApiDeps,
-  HttpMessage
+  MessageHeader
 } from '@open-cc/api-common';
 import {
   FlowModel,
@@ -137,16 +137,16 @@ export default async (apiDeps : ApiDeps) => {
 
   apiDeps
     .subject('twilio')
-    .on('before', (msg : HttpMessage<any>) => {
+    .on('before', (msg : any, header : MessageHeader) => {
       log('%O', msg);
-      const twilioSignature = msg.http.headers['x-twilio-signature'] as string;
+      const twilioSignature = header.http.headers['x-twilio-signature'] as string;
       if (!twilio.validateRequest(
         TWILIO_AUTH_TOKEN,
         twilioSignature,
-        msg.http.publicUrl,
-        msg.payload || {}
+        header.http.publicUrl,
+        msg || {}
       )) {
-        log('twilio request validation failed - ', twilioSignature, msg.http.publicUrl, msg.payload || {});
+        log('twilio request validation failed - ', twilioSignature, header.http.publicUrl, msg || {});
         return {
           http: {
             status: 401,
@@ -158,20 +158,20 @@ export default async (apiDeps : ApiDeps) => {
         }
       }
     })
-    .on('call', async (msg : HttpMessage<any>) => {
+    .on('call', async (msg : any, header : MessageHeader) => {
       // Register subscription for twiml
-      const twimlPromise = onEvent(buildTwimlPreparedSubject(msg.payload.CallSid));
+      const twimlPromise = onEvent(buildTwimlPreparedSubject(msg.CallSid));
       // Notify interactions api of call
       await apiDeps
         .subject('interactions')
-        .send(msg.payload.CallSid, new ExternalInteractionInitiatedEvent(msg.payload.CallSid,
+        .send(msg.CallSid, new ExternalInteractionInitiatedEvent(msg.CallSid,
           'voice',
-          msg.payload.Caller,
-          msg.payload.Called));
+          msg.Caller,
+          msg.Called));
 
       const twiml = await twimlPromise;
 
-      log('got twiml for', msg.http.url, twiml);
+      log('got twiml for', header.http.url, twiml);
 
       // Return twiml response
       return {
@@ -184,10 +184,10 @@ export default async (apiDeps : ApiDeps) => {
       };
     })
     .on('status_callback', async (msg : any) => {
-      if (msg.payload.CallStatus === 'completed') {
+      if (msg.CallStatus === 'completed') {
         // Notify interaction ended
         await apiDeps.subject('interactions')
-          .send(msg.payload.CallSid, new ExternalInteractionEndedEvent(msg.payload.CallSid));
+          .send(msg.CallSid, new ExternalInteractionEndedEvent(msg.CallSid));
       }
       return {
         http: {

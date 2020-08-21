@@ -22,7 +22,6 @@ export {
   Subject,
   SubjectMessageHeader as MessageHeader,
   SubjectMessage as Message,
-  HttpMessage,
   HttpMessageHeader
 } from 'meshage';
 

@@ -1,4 +1,4 @@
-import {ApiDeps, HttpMessage, MessageHeader} from './interfaces';
+import {ApiDeps, MessageHeader} from './interfaces';
 import {
   test,
   TestApiDeps,
@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 
 describe('api-common/server', () => {
   let testApi = ({subject} : ApiDeps) => {
-    subject('test-stream').on('test-http-message', (msg : HttpMessage<any>, header : MessageHeader) => {
+    subject('test-stream').on('test-http-message', (msg : any, header : MessageHeader) => {
       return {
         http: {
           headers: {
@@ -35,7 +35,7 @@ describe('api-common/server', () => {
     expect(res.status).toBe(202);
     const json = await res.json();
     expect(json.partitionKey).toBe('1234');
-    expect(json.echo.payload.message).toBe('request-input');
+    expect(json.echo.message).toBe('request-input');
   });
   it('can send the partition key in the request body', async () => {
     const res = await fetch(`http://localhost:${getPort('http')}/api/test-stream/{body.key}-123/?messageName=test-http-message`, {

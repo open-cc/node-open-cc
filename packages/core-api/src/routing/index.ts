@@ -60,7 +60,8 @@ export default async ({subject, entityRepository} : ApiDeps) => {
     .on('get_workers', () => {
       return {workers: workerService.getWorkersState()};
     })
-    .on('get_worker_address', async ({workerId}) => {
+    .on('get_worker_address', async ({workerId} : any) => {
+      log('get_worker_address - %s %o', workerId, workerService.getWorkersState())
       const workerState : WorkerState = workerService.getWorkersState()[workerId];
       return workerState ? workerState.address : 'none';
     });

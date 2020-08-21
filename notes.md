@@ -29,6 +29,7 @@
 pjsua --id sip:1001@$(ipconfig getifaddr en0) --username 1001 --local-port=5061 --app-log-level 3
 pjsua --id sip:1002@192.168.188.110 --registrar sip:192.168.188.110 --username 1002 --local-port=5062 --app-log-level 3
 ./play-sound.sh 1002
+sip:23@192.168.188.110
 ```
 
 # start twilio example

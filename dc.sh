@@ -72,7 +72,7 @@ if [[ "${RUN_NGROK}" == "true" ]] && [[ "${1}" == "up" ]]; then
 fi
 
 if [[ -z "${DEBUG}" ]]; then
-  export DEBUG='*,-*nats-monitor*'
+  export DEBUG='*,-meshage*,-*nats-monitor*,-*DestinationReported*-'
 fi
 
 docker-compose ${COMPOSE_ARGS} $@
