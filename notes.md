@@ -34,7 +34,7 @@ sip:23@192.168.188.110
 
 # start twilio example
 ```shell script
-./dc.sh nats core ngrok twilio - up --build
+./dc.sh nats core ngrok twilio websocketd - up --build
 curl -s -H 'Content-Type: application/json' -X POST http://localhost:8080/api/broadcast/workers -d '{ "name": "UpdateWorkerRegistration", "registrations": [{ "connected": true, "workerId": "1002", "address": "PSTN/+15555555555" }]}'
 ```
 # apis

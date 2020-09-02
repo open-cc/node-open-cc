@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
   asterisk:
     image: node-open-cc-asterisk:latest

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>title</title>
+    <script type="text/javascript"
+            src="https://unpkg.com/reconnecting-websocket@4.4.0/dist/reconnecting-websocket-iife.js"></script>
+    <script>
+        window.onload = () => {
+            const ws = new ReconnectingWebSocket('ws://localhost:8888');
+            ws.addEventListener('open', () => {
+                console.log('connected');
+            });
+            ws.addEventListener('message', (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.header) {
+                        console.log(msg.header.name);
+                    } else {
+                        console.log(msg);
+                    }
+                } catch (err) {
+                    console.log(err, event.data);
+                    // ignore
+                }
+            });
+        };
+    </script>
+</head>
+<body>
+<!-- page content -->
+</body>
+</html>

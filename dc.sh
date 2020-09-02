@@ -75,4 +75,8 @@ if [[ -z "${DEBUG}" ]]; then
   export DEBUG='*,-meshage*,-*nats-monitor*,-*DestinationReported*-'
 fi
 
-docker-compose ${COMPOSE_ARGS} $@
+if [[ -n "${COMPOSE_ARGS}" ]]; then
+  docker-compose ${COMPOSE_ARGS} config > .dc
+fi
+
+docker-compose -f .dc $@

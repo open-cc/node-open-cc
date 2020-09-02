@@ -1,0 +1,16 @@
+version: '3.7'
+services:
+  websocketdtest:
+    build:
+      context: ./packages/websocketd
+    ports:
+      - 8888:8080
+    entrypoint: websocketd
+    # command: ['--port=8080', '--devconsole', '/scripts/handler.sh', 'http://$CORE_PRIVATE_IPV4:8080', 'nats://$NATS_PRIVATE_IPV4:4222']
+    command: ['--port=8080', '--staticdir=./scripts/static', '/scripts/handler.sh', 'http://$CORE_PRIVATE_IPV4:8080', 'nats://$NATS_PRIVATE_IPV4:4222']
+    volumes:
+      - ./packages/websocketd:/scripts
+    init: true
+    environment:
+      - CORE_PRIVATE_IPV4
+      - NATS_PRIVATE_IPV4

@@ -1,4 +1,4 @@
-version: '3'
+version: '3.7'
 services:
   kamailio:
     image: node-open-cc-kamailio-proxy:latest
